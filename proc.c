@@ -6,6 +6,20 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
+
+int clkPerPrio[4] ={1,2,4,8};
+int q0 = -1;
+int q1 = -1;
+int q2 = -1;
+int q3 = -1;
+struct proc* q_0[64];
+struct proc* q_1[64];
+struct proc* q_2[64];
+struct proc* q_3[64];
+
+// struct proc *
+struct pstat pstat_var;
 
 struct {
   struct spinlock lock;
@@ -17,6 +31,7 @@ static struct proc *initproc;
 int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
+extern uint ticks;
 
 static void wakeup1(void *chan);
 
@@ -31,6 +46,7 @@ int
 cpuid() {
   return mycpu()-cpus;
 }
+
 
 // Must be called with interrupts disabled to avoid the caller being
 // rescheduled between reading lapicid and running through the loop.
@@ -79,8 +95,23 @@ allocproc(void)
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == UNUSED)
-      goto found;
+    if(p->state == UNUSED){
+      p->priority = 0;
+      p->myticks[0] = 0;
+      p->myticks[1] = 0;
+      p->myticks[2] = 0;
+      p->myticks[3] = 0;
+      q0++;
+      q_0[q0] = p;
+      pstat_var.inuse[p->pid] = 1;
+			pstat_var.priority[p->pid] = p->priority;
+			pstat_var.myticks[p->pid][0] = 0;
+			pstat_var.myticks[p->pid][1] = 0;
+			pstat_var.myticks[p->pid][2] = 0;
+			pstat_var.myticks[p->pid][3] = 0;
+			pstat_var.pid[p->pid] = p->pid;
+
+      goto found;}
 
   release(&ptable.lock);
   return 0;
@@ -88,6 +119,17 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->priority = 0;  //default
+  p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
+  q0++;
+  q_0[q0] = p;
+  pstat_var.inuse[p->pid] = 1;
+	pstat_var.priority[p->pid] = p->priority;
+	pstat_var.myticks[p->pid][0] = 0;
+	pstat_var.myticks[p->pid][1] = 0;
+	pstat_var.myticks[p->pid][2] = 0;
+	pstat_var.myticks[p->pid][3] = 0;
+	pstat_var.pid[p->pid] = p->pid;
 
   release(&ptable.lock);
 
@@ -330,26 +372,138 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
+    uint xticks;
+    acquire(&tickslock);
+    xticks = ticks;
+    release(&tickslock);
+    
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+    if(xticks % 100 == 0){
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
+        p->priority = 0; 
+      }
     }
+
+    if(q0!=-1){
+      for(int i=0;i<q0;i++){
+        if(q_0[i]->state != RUNNABLE)
+          continue;
+        p = q_0[i];
+        // p->myticks[p->priority]++;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING; 
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        if(p->myticks[0] == clkPerPrio[0]){
+          q1++;
+          p->priority=p->priority+1;
+					pstat_var.priority[p->pid] = p->priority;
+					q_1[q1] = p;
+
+					/*delete proc from q0*/
+					q_0[i] = 0;
+					for(int j=i;j<=q0-1;j++)
+					q_0[j] = q_0[j+1];
+					q_0[q0] = 0;
+          // *****************
+					p->myticks[0] = 0;
+					q0--;
+        }
+        c->proc = 0;
+        }
+      }
+
+      if(q1!=-1){
+      for(int i=0;i<q1;i++){
+        if(q_1[i]->state != RUNNABLE)
+          continue;
+        p = q_1[i];
+        p->myticks[p->priority]++;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING; 
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        if(p->myticks[0 == clkPerPrio[0]]){
+          q2++;
+          p->priority=p->priority+1;
+					pstat_var.priority[p->pid] = p->priority;
+					q_2[q2] = p;
+
+					/*delete proc from q0*/
+					q_1[i]=0;
+					for(int j=i;j<=q1-1;j++)
+					q_1[j] = q_1[j+1];
+					q_1[q1] = 0;
+					p->myticks[0] = 0;
+					q1--;
+        }
+        c->proc = 0;
+        }
+      }
+
+      if(q2!=-1){
+      for(int i=0;i<q2;i++){
+        if(q_2[i]->state != RUNNABLE)
+          continue;
+        p = q_2[i];
+        p->myticks[p->priority]++;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING; 
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        if(p->myticks[0 == clkPerPrio[0]]){
+          q3++;
+          p->priority=p->priority+1;
+					pstat_var.priority[p->pid] = p->priority;
+					q_2[q2] = p;
+
+					/*delete proc from q0*/
+					q_2[i]=0;
+					for(int j=i;j<=q2-1;j++)
+					q_2[j] = q_2[j+1];
+					q_2[q2] = 0;
+					p->myticks[0] = 0;
+					q2--;
+        }
+        c->proc = 0;
+        }
+      }
+
+      if(q3!=-1){
+      for(int i=0;i<q3;i++){
+        if(q_3[i]->state != RUNNABLE)
+          continue;
+        p = q_3[i];
+        p->myticks[p->priority]++;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING; 
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        q_3[i]=0;
+				for(int j=i;j<=q3-1;j++)
+					q_3[j] = q_3[j+1];
+				q_3[q3] = p;
+
+        c->proc = 0;
+        }
+      }
+
+    
     release(&ptable.lock);
 
   }
@@ -460,8 +614,42 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan){
+      // p->myticks[0] = 0;
+      // p->myticks[1] = 0;
+      // p->myticks[2] = 0;
+      // p->myticks[3] = 0;
+
       p->state = RUNNABLE;
+      if(p->priority == 0){
+        q0++;
+        for(int i=q0;i>0;i--){
+          q_0[i] = q_0[i-1];
+        }
+        q_0[0] = p;
+      }
+      else if(p->priority == 0){
+        q1++;
+        for(int i=q1;i>0;i--){
+          q_1[i] = q_1[i-1];
+        }
+        q_1[0] = p;
+      }
+      else if(p->priority == 0){
+        q2++;
+        for(int i=q2;i>0;i--){
+          q_2[i] = q_2[i-1];
+        }
+        q_2[0] = p;
+      }
+      else{
+        q3++;
+        for(int i=q3;i>0;i--){
+          q_3[i] = q_3[i-1];
+        }
+        q_3[0] = p;
+      }
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -531,4 +719,47 @@ procdump(void)
     }
     cprintf("\n");
   }
+
 }
+
+
+int cps()
+{
+    struct proc *p;
+    sti();
+    acquire(&ptable.lock);
+    cprintf("name \t pid \t state \t\t priority \n");
+    for(p=ptable.proc;p<&ptable.proc[NPROC]; p++){
+	if(p->state == SLEEPING)
+ 		cprintf("%s \t %d \t SLEEPING \t %d\n",p->name,p->pid,p->priority);
+	else if(p->state == RUNNING)
+		cprintf("%s \t %d \t RUNNING \t %d\n",p->name,p->pid,p->priority);
+	else if(p->state == RUNNABLE)
+		cprintf("%s \t %d \t RUNNABLE \t %d\n",p->name,p->pid,p->priority);
+ } 
+release(&ptable.lock);
+return 22;  
+}
+
+// int
+// getpinfo(struct pstat* pstat)
+// {
+//   struct proc *p;
+//   int i = 0;
+//   acquire(&ptable.lock);
+//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//     if(p->state == UNUSED)
+//       continue;
+//     pstat->inuse[i] = 1;
+//     pstat->pid[i] = p->pid;
+//     pstat->priority[i] = p->priority;
+    
+//     int j;
+//     for(j = 0; j < 4; ++j){
+//       pstat->myticks[i][j] = p->ticks[j];
+//     }
+//     ++i;
+//   }
+//   release(&ptable.lock);
+//   return 0;
+// }

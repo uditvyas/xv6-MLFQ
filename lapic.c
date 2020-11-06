@@ -220,7 +220,7 @@ cmostime(struct rtcdate *r)
     CONV(hour  );
     CONV(day   );
     CONV(month );
-    CONV(year  );
+    (year  );
 #undef     CONV
   }
 
