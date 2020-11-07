@@ -368,7 +368,7 @@ wait(void)
 void
 scheduler(void)
 {
-  struct proc *p;
+  // struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
   
@@ -376,27 +376,27 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    uint xticks;
-    acquire(&tickslock);
-    xticks = ticks;
-    release(&tickslock);
+    // uint xticks;
+    // acquire(&tickslock);
+    // xticks = ticks;
+    // release(&tickslock);
     
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
-    if(xticks % 100 == 0){
-      // Add all process into highest priority
-      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if (p->priority!=0){
-          p->priority = 0;
-          q0++;
-          q_0[q0] = *p;
-        }
-        p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
-      }
-      // Remove all process from other queues
-      *p1=*p2=*p3=-1;
-    }
+    // if(xticks % 100 == 0){
+    //   // Add all process into highest priority
+    //   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    //     if (p->priority!=0){
+    //       p->priority = 0;
+    //       q0++;
+    //       q_0[q0] = *p;
+    //     }
+    //     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
+    //   }
+    //   // Remove all process from other queues
+    //   *p1=*p2=*p3=-1;
+    // }
 
     if(q0!=-1){
       mlfq(q_0,q_1,p0,p1,c);
@@ -421,9 +421,20 @@ scheduler(void)
 }
 
 void
-Boost()
+Boost(void)
 {
-
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->priority!=0){
+      p->priority = 0;
+      q0++;
+      q_0[q0] = *p;
+    }
+    p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
+  }
+  // Remove all process from other queues
+  q1=q2=q3=-1;
+  yield();
 }
 
 void 
@@ -443,7 +454,7 @@ mlfq(struct proc *q_current,struct proc *q_next,int *current, int *next,struct c
     switchkvm();
     //pstat_var.myticks[p->pid][0] = p->myticks[0];
     if(p->myticks[0] == clkPerPrio[0]){
-      *next++;
+      (*next)++;
       p->myticks[p->priority] = 0;
       if (p->priority!=3)   p->priority=p->priority+1;
 	    //pstat_var.priority[p->pid] = p->priority;
@@ -453,7 +464,7 @@ mlfq(struct proc *q_current,struct proc *q_next,int *current, int *next,struct c
 	    for(int j=i;j<=*current-1;j++){
 	      q_current[j] = q_current[j+1];
       }
-	    *current--;
+	    (*current)--;
       // c->proc = 0;
     }
   }
