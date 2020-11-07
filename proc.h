@@ -63,7 +63,7 @@ extern int q0;
 extern int q1;
 extern int q2;
 extern int q3;
-extern struct pstat pstat_var;
+// extern struct pstat pstat_var;
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss

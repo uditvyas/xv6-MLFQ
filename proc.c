@@ -17,10 +17,10 @@ int *p0 = &q0;
 int *p1 = &q1;
 int *p2 = &q2;
 int *p3 = &q3;
-struct proc* q_0[64];
-struct proc* q_1[64];
-struct proc* q_2[64];
-struct proc* q_3[64];
+struct proc q_0[64];
+struct proc q_1[64];
+struct proc q_2[64];
+struct proc q_3[64];
 
 // struct proc *
 //struct pstat pstat_var;
@@ -106,7 +106,7 @@ allocproc(void)
       p->myticks[2] = 0;
       p->myticks[3] = 0;
       q0++;
-      q_0[q0] = p;
+      q_0[q0] = *p;
       // pstat_var.inuse[p->pid] = 1;
 			// pstat_var.priority[p->pid] = p->priority;
 			// pstat_var.myticks[p->pid][0] = 0;
@@ -126,7 +126,7 @@ found:
   p->priority = 0;  //default
   p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   q0++;
-  q_0[q0] = p;
+  q_0[q0] = *p;
   // pstat_var.inuse[p->pid] = 1;
 	// pstat_var.priority[p->pid] = p->priority;
 	// pstat_var.myticks[p->pid][0] = 0;
@@ -390,28 +390,28 @@ scheduler(void)
         if (p->priority!=0){
           p->priority = 0;
           q0++;
-          q_0[q0] = p;
+          q_0[q0] = *p;
         }
         p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
       }
       // Remove all process from other queues
-      *p1=*p2=*p3=-1
+      *p1=*p2=*p3=-1;
     }
 
     if(q0!=-1){
-      mlfq(q_0,q_1,q0,q1,c);
+      mlfq(q_0,q_1,p0,p1,c);
     }
 
     if(q1!=-1){
-      mlfq(q_1,q_2,q1,q2,c);
+      mlfq(q_1,q_2,p1,p2,c);
     }
 
     if(q2!=-1){
-      mlfq(q_2,q_3,q2,q3,c);
+      mlfq(q_2,q_3,p2,p3,c);
     }
 
     if(q3!=-1){
-      mlfq(q_3,q_3,q3,q3,c);
+      mlfq(q_3,q_3,p3,p3,c);
     }
     c->proc = 0;
     
@@ -420,11 +420,17 @@ scheduler(void)
   }
 }
 
+void
+Boost()
+{
+
+}
 
 void 
-mlfq(struct proc *q_current,struct proc *q_next,int current, int next,struct cpu *c)
-{  
-  for(int i=0;i<current+1;i++){
+mlfq(struct proc q_current,struct proc q_next,int *current, int *next,struct cpu *c)
+{
+  struct proc *p;  
+  for(int i=0;i<*current+1;i++){
     if(q_current[i]->state != RUNNABLE)
       continue;
     p = q_current[i];
@@ -436,20 +442,21 @@ mlfq(struct proc *q_current,struct proc *q_next,int current, int next,struct cpu
     switchkvm();
     //pstat_var.myticks[p->pid][0] = p->myticks[0];
     if(p->myticks[0] == clkPerPrio[0]){
-      next++;
-      myticks[p->priority] = 0
+      *next++;
+      p->myticks[p->priority] = 0;
       if (p->priority!=3)   p->priority=p->priority+1;
 	    //pstat_var.priority[p->pid] = p->priority;
-	    q_next[next] = p;
+	    q_next[*next] = p;
 	    /*delete proc from q0*/
 	    // q_current[i]=0;
-	    for(int j=i;j<=current-1;j++){
+	    for(int j=i;j<=*current-1;j++){
 	      q_current[j] = q_current[j+1];
       }
-	    current--;
+	    *current--;
       // c->proc = 0;
     }
   }
+}
 
 
 // Enter scheduler.  Must hold only ptable.lock
