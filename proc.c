@@ -399,19 +399,19 @@ scheduler(void)
     }
 
     if(q0!=-1){
-      mlfq(q_0,q_1,p0,p1,c);
+      mlfq(*q_0,*q_1,p0,p1,c);
     }
 
     if(q1!=-1){
-      mlfq(q_1,q_2,p1,p2,c);
+      mlfq(*q_1,*q_2,p1,p2,c);
     }
 
     if(q2!=-1){
-      mlfq(q_2,q_3,p2,p3,c);
+      mlfq(*q_2,*q_3,p2,p3,c);
     }
 
     if(q3!=-1){
-      mlfq(q_3,q_3,p3,p3,c);
+      mlfq(*q_3,*q_3,p3,p3,c);
     }
     c->proc = 0;
     
@@ -431,9 +431,10 @@ mlfq(struct proc q_current,struct proc q_next,int *current, int *next,struct cpu
 {
   struct proc *p;  
   for(int i=0;i<*current+1;i++){
-    if(q_current[i]->state != RUNNABLE)
+    p = q_current +i;
+    if(p->state != RUNNABLE)
       continue;
-    p = q_current[i];
+    // p = q_current[i];
     // p->myticks[p->priority]++;
     c->proc = p;
     switchuvm(p);
@@ -576,28 +577,28 @@ wakeup1(void *chan)
         for(int i=q0;i>0;i--){
           q_0[i] = q_0[i-1];
         }
-        q_0[0] = p;
+        q_0[0] = *p;
       }
       else if(p->priority == 0){
         q1++;
         for(int i=q1;i>0;i--){
           q_1[i] = q_1[i-1];
         }
-        q_1[0] = p;
+        q_1[0] = *p;
       }
       else if(p->priority == 0){
         q2++;
         for(int i=q2;i>0;i--){
           q_2[i] = q_2[i-1];
         }
-        q_2[0] = p;
+        q_2[0] = *p;
       }
       else{
         q3++;
         for(int i=q3;i>0;i--){
           q_3[i] = q_3[i-1];
         }
-        q_3[0] = p;
+        q_3[0] = *p;
       }
     }
 }
