@@ -399,19 +399,19 @@ scheduler(void)
     }
 
     if(q0!=-1){
-      mlfq(*q_0,*q_1,p0,p1,c);
+      mlfq(q_0,q_1,p0,p1,c);
     }
 
     if(q1!=-1){
-      mlfq(*q_1,*q_2,p1,p2,c);
+      mlfq(q_1,q_2,p1,p2,c);
     }
 
     if(q2!=-1){
-      mlfq(*q_2,*q_3,p2,p3,c);
+      mlfq(q_2,q_3,p2,p3,c);
     }
 
     if(q3!=-1){
-      mlfq(*q_3,*q_3,p3,p3,c);
+      mlfq(q_3,q_3,p3,p3,c);
     }
     c->proc = 0;
     
@@ -427,11 +427,11 @@ Boost()
 }
 
 void 
-mlfq(struct proc q_current,struct proc q_next,int *current, int *next,struct cpu *c)
+mlfq(struct proc *q_current,struct proc *q_next,int *current, int *next,struct cpu *c)
 {
   struct proc *p;  
   for(int i=0;i<*current+1;i++){
-    p = q_current +i;
+    p = &q_current[i];
     if(p->state != RUNNABLE)
       continue;
     // p = q_current[i];
@@ -447,7 +447,7 @@ mlfq(struct proc q_current,struct proc q_next,int *current, int *next,struct cpu
       p->myticks[p->priority] = 0;
       if (p->priority!=3)   p->priority=p->priority+1;
 	    //pstat_var.priority[p->pid] = p->priority;
-	    q_next[*next] = p;
+	    q_next[*next] = *p;
 	    /*delete proc from q0*/
 	    // q_current[i]=0;
 	    for(int j=i;j<=*current-1;j++){

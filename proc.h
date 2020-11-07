@@ -55,14 +55,18 @@ struct proc {
   int priority;
   int myticks[4];
 };
-extern struct proc* q_0[64];
-extern struct proc* q_1[64];
-extern struct proc* q_2[64];
-extern struct proc* q_3[64];
+extern struct proc q_0[64];
+extern struct proc q_1[64];
+extern struct proc q_2[64];
+extern struct proc q_3[64];
 extern int q0;
 extern int q1;
 extern int q2;
 extern int q3;
+extern int *p0;
+extern int *p1;
+extern int *p2;
+extern int *p3;
 // extern struct pstat pstat_var;
 // Process memory is laid out contiguously, low addresses first:
 //   text
