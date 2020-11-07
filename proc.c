@@ -6,7 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "pstat.h"
+//#include "pstat.h"
 
 int clkPerPrio[4] ={1,2,4,8};
 int q0 = -1;
@@ -19,7 +19,7 @@ struct proc* q_2[64];
 struct proc* q_3[64];
 
 // struct proc *
-struct pstat pstat_var;
+//struct pstat pstat_var;
 
 struct {
   struct spinlock lock;
@@ -103,13 +103,13 @@ allocproc(void)
       p->myticks[3] = 0;
       q0++;
       q_0[q0] = p;
-      pstat_var.inuse[p->pid] = 1;
-			pstat_var.priority[p->pid] = p->priority;
-			pstat_var.myticks[p->pid][0] = 0;
-			pstat_var.myticks[p->pid][1] = 0;
-			pstat_var.myticks[p->pid][2] = 0;
-			pstat_var.myticks[p->pid][3] = 0;
-			pstat_var.pid[p->pid] = p->pid;
+      // pstat_var.inuse[p->pid] = 1;
+			// pstat_var.priority[p->pid] = p->priority;
+			// pstat_var.myticks[p->pid][0] = 0;
+			// pstat_var.myticks[p->pid][1] = 0;
+			// pstat_var.myticks[p->pid][2] = 0;
+			// pstat_var.myticks[p->pid][3] = 0;
+			// pstat_var.pid[p->pid] = p->pid;
 
       goto found;}
 
@@ -123,13 +123,13 @@ found:
   p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   q0++;
   q_0[q0] = p;
-  pstat_var.inuse[p->pid] = 1;
-	pstat_var.priority[p->pid] = p->priority;
-	pstat_var.myticks[p->pid][0] = 0;
-	pstat_var.myticks[p->pid][1] = 0;
-	pstat_var.myticks[p->pid][2] = 0;
-	pstat_var.myticks[p->pid][3] = 0;
-	pstat_var.pid[p->pid] = p->pid;
+  // pstat_var.inuse[p->pid] = 1;
+	// pstat_var.priority[p->pid] = p->priority;
+	// pstat_var.myticks[p->pid][0] = 0;
+	// pstat_var.myticks[p->pid][1] = 0;
+	// pstat_var.myticks[p->pid][2] = 0;
+	// pstat_var.myticks[p->pid][3] = 0;
+	// pstat_var.pid[p->pid] = p->pid;
 
   release(&ptable.lock);
 
@@ -399,11 +399,11 @@ scheduler(void)
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
-        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        //pstat_var.myticks[p->pid][0] = p->myticks[0];
         if(p->myticks[0] == clkPerPrio[0]){
           q1++;
           p->priority=p->priority+1;
-					pstat_var.priority[p->pid] = p->priority;
+					//pstat_var.priority[p->pid] = p->priority;
 					q_1[q1] = p;
 
 					/*delete proc from q0*/
@@ -415,7 +415,7 @@ scheduler(void)
 					p->myticks[0] = 0;
 					q0--;
         }
-        c->proc = 0;
+        
         }
       }
 
@@ -431,11 +431,11 @@ scheduler(void)
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
-        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        //pstat_var.myticks[p->pid][0] = p->myticks[0];
         if(p->myticks[0 == clkPerPrio[0]]){
           q2++;
           p->priority=p->priority+1;
-					pstat_var.priority[p->pid] = p->priority;
+					//pstat_var.priority[p->pid] = p->priority;
 					q_2[q2] = p;
 
 					/*delete proc from q0*/
@@ -462,12 +462,12 @@ scheduler(void)
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
-        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        //pstat_var.myticks[p->pid][0] = p->myticks[0];
         if(p->myticks[0 == clkPerPrio[0]]){
           q3++;
           p->priority=p->priority+1;
-					pstat_var.priority[p->pid] = p->priority;
-					q_2[q2] = p;
+					//pstat_var.priority[p->pid] = p->priority;
+					q_3[q3] = p;
 
 					/*delete proc from q0*/
 					q_2[i]=0;
@@ -493,7 +493,7 @@ scheduler(void)
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
-        pstat_var.myticks[p->pid][0] = p->myticks[0];
+        //pstat_var.myticks[p->pid][0] = p->myticks[0];
         q_3[i]=0;
 				for(int j=i;j<=q3-1;j++)
 					q_3[j] = q_3[j+1];
@@ -508,6 +508,42 @@ scheduler(void)
 
   }
 }
+
+
+void 
+mlfq(struct proc *q_current,struct proc *q_next,int current, int next,struct cpu *c)
+{
+    
+      for(int i=0;i<q2;i++){
+        if(q_2[i]->state != RUNNABLE)
+          continue;
+        p = q_2[i];
+        p->myticks[p->priority]++;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING; 
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+        //pstat_var.myticks[p->pid][0] = p->myticks[0];
+        if(p->myticks[0 == clkPerPrio[0]]){
+          q3++;
+          p->priority=p->priority+1;
+					//pstat_var.priority[p->pid] = p->priority;
+					q_3[q3] = p;
+
+					/*delete proc from q0*/
+					q_2[i]=0;
+					for(int j=i;j<=q2-1;j++)
+					q_2[j] = q_2[j+1];
+					q_2[q2] = 0;
+					p->myticks[0] = 0;
+					q2--;
+        }
+        c->proc = 0;
+        }
+      }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores

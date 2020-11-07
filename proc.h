@@ -10,7 +10,7 @@ struct cpu {
   struct proc *proc;           // The process running on this cpu or null
 };
 
-#include "pstat.h"
+// #include "pstat.h"
 extern struct cpu cpus[NCPU];
 extern int ncpu;
 
@@ -69,5 +69,5 @@ extern struct pstat pstat_var;
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
-struct pstat;
-int getpinfo(struct pstat * pstat);
+// struct pstat;
+// int getpinfo(struct pstat * pstat);
