@@ -381,13 +381,21 @@ scheduler(void)
     acquire(&ptable.lock);
 
     if(xticks % 100 == 0){
+      // Add all process into highest priority
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if (p->priority!=0){
+          p->priority = 0;
+          q0++;
+          q_0[q0] = p;
+        }
         p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
-        p->priority = 0; 
       }
+      // Remove all process from other queues
+      q1=q2=q3=-1
     }
 
     if(q0!=-1){
+      
       for(int i=0;i<q0;i++){
         if(q_0[i]->state != RUNNABLE)
           continue;
@@ -512,37 +520,33 @@ scheduler(void)
 
 void 
 mlfq(struct proc *q_current,struct proc *q_next,int current, int next,struct cpu *c)
-{
-    
-      for(int i=0;i<q2;i++){
-        if(q_2[i]->state != RUNNABLE)
-          continue;
-        p = q_2[i];
-        p->myticks[p->priority]++;
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING; 
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-        //pstat_var.myticks[p->pid][0] = p->myticks[0];
-        if(p->myticks[0 == clkPerPrio[0]]){
-          q3++;
-          p->priority=p->priority+1;
-					//pstat_var.priority[p->pid] = p->priority;
-					q_3[q3] = p;
-
-					/*delete proc from q0*/
-					q_2[i]=0;
-					for(int j=i;j<=q2-1;j++)
-					q_2[j] = q_2[j+1];
-					q_2[q2] = 0;
-					p->myticks[0] = 0;
-					q2--;
-        }
-        c->proc = 0;
-        }
+{  
+  for(int i=0;i<current+1;i++){
+    if(q_current[i]->state != RUNNABLE)
+      continue;
+    p = q_current[i];
+    // p->myticks[p->priority]++;
+    c->proc = p;
+    switchuvm(p);
+    p->state = RUNNING; 
+    swtch(&(c->scheduler), p->context);
+    switchkvm();
+    //pstat_var.myticks[p->pid][0] = p->myticks[0];
+    if(p->myticks[0] == clkPerPrio[0]){
+      next++;
+      myticks[p->priority] = 0
+      if (p->priority!=3)   p->priority=p->priority+1;
+	    //pstat_var.priority[p->pid] = p->priority;
+	    q_next[next] = p;
+	    /*delete proc from q0*/
+	    // q_current[i]=0;
+	    for(int j=i;j<=current-1;j++){
+	      q_current[j] = q_current[j+1];
       }
+	    current--;
+      // c->proc = 0;
+    }
+  }
 
 
 // Enter scheduler.  Must hold only ptable.lock
