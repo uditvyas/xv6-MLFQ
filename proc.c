@@ -13,6 +13,10 @@ int q0 = -1;
 int q1 = -1;
 int q2 = -1;
 int q3 = -1;
+int *p0 = &q0;
+int *p1 = &q1;
+int *p2 = &q2;
+int *p3 = &q3;
 struct proc* q_0[64];
 struct proc* q_1[64];
 struct proc* q_2[64];
@@ -391,126 +395,25 @@ scheduler(void)
         p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
       }
       // Remove all process from other queues
-      q1=q2=q3=-1
+      *p1=*p2=*p3=-1
     }
 
     if(q0!=-1){
-      
-      for(int i=0;i<q0;i++){
-        if(q_0[i]->state != RUNNABLE)
-          continue;
-        p = q_0[i];
-        // p->myticks[p->priority]++;
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING; 
+      mlfq(q_0,q_1,q0,q1,c);
+    }
 
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-        //pstat_var.myticks[p->pid][0] = p->myticks[0];
-        if(p->myticks[0] == clkPerPrio[0]){
-          q1++;
-          p->priority=p->priority+1;
-					//pstat_var.priority[p->pid] = p->priority;
-					q_1[q1] = p;
+    if(q1!=-1){
+      mlfq(q_1,q_2,q1,q2,c);
+    }
 
-					/*delete proc from q0*/
-					q_0[i] = 0;
-					for(int j=i;j<=q0-1;j++)
-					q_0[j] = q_0[j+1];
-					q_0[q0] = 0;
-          // *****************
-					p->myticks[0] = 0;
-					q0--;
-        }
-        
-        }
-      }
+    if(q2!=-1){
+      mlfq(q_2,q_3,q2,q3,c);
+    }
 
-      if(q1!=-1){
-      for(int i=0;i<q1;i++){
-        if(q_1[i]->state != RUNNABLE)
-          continue;
-        p = q_1[i];
-        p->myticks[p->priority]++;
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING; 
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-        //pstat_var.myticks[p->pid][0] = p->myticks[0];
-        if(p->myticks[0 == clkPerPrio[0]]){
-          q2++;
-          p->priority=p->priority+1;
-					//pstat_var.priority[p->pid] = p->priority;
-					q_2[q2] = p;
-
-					/*delete proc from q0*/
-					q_1[i]=0;
-					for(int j=i;j<=q1-1;j++)
-					q_1[j] = q_1[j+1];
-					q_1[q1] = 0;
-					p->myticks[0] = 0;
-					q1--;
-        }
-        c->proc = 0;
-        }
-      }
-
-      if(q2!=-1){
-      for(int i=0;i<q2;i++){
-        if(q_2[i]->state != RUNNABLE)
-          continue;
-        p = q_2[i];
-        p->myticks[p->priority]++;
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING; 
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-        //pstat_var.myticks[p->pid][0] = p->myticks[0];
-        if(p->myticks[0 == clkPerPrio[0]]){
-          q3++;
-          p->priority=p->priority+1;
-					//pstat_var.priority[p->pid] = p->priority;
-					q_3[q3] = p;
-
-					/*delete proc from q0*/
-					q_2[i]=0;
-					for(int j=i;j<=q2-1;j++)
-					q_2[j] = q_2[j+1];
-					q_2[q2] = 0;
-					p->myticks[0] = 0;
-					q2--;
-        }
-        c->proc = 0;
-        }
-      }
-
-      if(q3!=-1){
-      for(int i=0;i<q3;i++){
-        if(q_3[i]->state != RUNNABLE)
-          continue;
-        p = q_3[i];
-        p->myticks[p->priority]++;
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING; 
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-        //pstat_var.myticks[p->pid][0] = p->myticks[0];
-        q_3[i]=0;
-				for(int j=i;j<=q3-1;j++)
-					q_3[j] = q_3[j+1];
-				q_3[q3] = p;
-
-        c->proc = 0;
-        }
-      }
-
+    if(q3!=-1){
+      mlfq(q_3,q_3,q3,q3,c);
+    }
+    c->proc = 0;
     
     release(&ptable.lock);
 

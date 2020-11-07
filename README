@@ -1,3 +1,16 @@
+Steps taken so far .... 
+
+1. Insertion of priority and myticks in proc.h
+2. 4 ptable like arrays of type struct proc, which are the 4 queues of MLFQ (proc.c)
+3. 4 index variables, pointers for the queues
+4. allocproc in C, for set priorities and ticks to 0, and thus add to the first queue
+5. Priority boost after 100 ticks (in scheduler() in proc.c), transferred processes into queue0 and emptied all other queues.
+6. Implemented function MLFQ(current queue, next queue, current next, CPU)
+7. 
+
+
+COMMENTED OUT ALL THE PSTAT SYSCALL CODE FROM EVERYWHERE
+*****************************************************************************************************
 NOTE: we have stopped maintaining the x86 version of xv6, and switched
 our efforts to the RISC-V version
 (https://github.com/mit-pdos/xv6-riscv.git)
