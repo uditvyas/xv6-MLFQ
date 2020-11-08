@@ -13,7 +13,9 @@ struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+uint xticks;
 
+uint diff = 0;
 void
 tvinit(void)
 {
@@ -106,19 +108,23 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
-  uint xticks;
+  
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER)
      {
       acquire(&tickslock);
       xticks = ticks;
+      
+      //cprintf("num of ticks is %d /n",xticks);
       release(&tickslock);
-      if(xticks%100 == 0)
+      if(xticks-diff >= 100)
       { 
-        cprintf("Hamesha boost hi print hoga!\n");
+        //cprintf("GOing in boost\n");
+        diff = xticks;
         Boost();
       }
-      cprintf("Idhar yield hoga!\n");
+      diff = xticks;
+      //cprintf("Idhar yield hoga!\n");
       yield();
     }
 

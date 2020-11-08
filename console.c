@@ -228,6 +228,7 @@ consoleintr(int (*getc)(void))
   }
   release(&cons.lock);
   if(doprocdump) {
+    cprintf("PROCDUMP\n");
     procdump();  // now call procdump() wo. cons.lock held
   }
 }
