@@ -99,7 +99,7 @@ allocproc(void)
     {
       // Allocating new peocess a priority in initial ticks as 0 in all priority levels
       p->priority = 0;
-      cprintf("priority 0\n");
+      //cprintf("priority 0\n");
       // p->myticks[0] = 0;
       // p->myticks[1] = 0;
       // p->myticks[2] = 0;
@@ -147,10 +147,10 @@ found:
   p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   q0++;
   
-  cprintf("length of q0 is %d \n",q0);
+  //cprintf("length of q0 is %d \n",q0);
   q_0[q0] = p;
-  cprintf("added in queue0 \n");
-  cprintf("length of q0 is %d \n",q0);
+  //cprintf("added in queue0 \n");
+  //cprintf("length of q0 is %d \n",q0);
   return p;
 }
 

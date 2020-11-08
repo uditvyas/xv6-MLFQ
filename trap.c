@@ -14,8 +14,8 @@ extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
 uint xticks;
-
 uint diff = 0;
+
 void
 tvinit(void)
 {
@@ -115,11 +115,11 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       xticks = ticks;
       
-      //cprintf("num of ticks is %d /n",xticks);
+      //cprintf("num of ticks is %d \n",xticks);
       release(&tickslock);
-      if(xticks-diff >= 100)
+      if(xticks/100 - diff/100 > 0)
       { 
-        //cprintf("GOing in boost\n");
+        //cprintf("Going in boost\n");
         diff = xticks;
         Boost();
       }
