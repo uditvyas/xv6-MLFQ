@@ -120,7 +120,6 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-int             cps(void);
 void            mlfq(struct proc*,struct proc*,int*,int*,struct cpu*);
 void            Boost(void);
 // swtch.S

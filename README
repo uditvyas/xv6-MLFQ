@@ -7,7 +7,11 @@ Steps taken so far ....
 5. Priority boost after 100 ticks (in scheduler() in proc.c), transferred processes into queue0 and emptied all other queues.
 6. Implemented function MLFQ(current queue, next queue, current next, CPU)
 7. implemented function Boost(Defined in proc.c) which is called in trap.c. It calls yeild when ticks%100
-
+8. Debugging done with cprintf function. (Same arguments as printf)
+9. Problem found at trap.c when the process has to give up CPU when the clock ticks
+    if(myproc() && myproc()->state == RUNNING &&
+        tf->trapno == T_IRQ0+IRQ_TIMER)
+   (line 110-123)
 
 
 COMMENTED OUT ALL THE PSTAT SYSCALL CODE FROM EVERYWHERE

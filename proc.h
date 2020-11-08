@@ -10,7 +10,6 @@ struct cpu {
   struct proc *proc;           // The process running on this cpu or null
 };
 
-// #include "pstat.h"
 extern struct cpu cpus[NCPU];
 extern int ncpu;
 
@@ -33,8 +32,6 @@ struct context {
   uint eip;
 };
 
-
-
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
@@ -52,9 +49,18 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  int priority;
-  int myticks[4];
+  
+  int priority;                // Priority of the process
+  int myticks[4];              // No of ticks of the process in all the queues
 };
+
+// Process memory is laid out contiguously, low addresses first:
+//   text
+//   original data and bss
+//   fixed-size stack
+//   expandable heap
+
+/*Global Definition of queues and pointers to queues sizes*/
 extern struct proc q_0[64];
 extern struct proc q_1[64];
 extern struct proc q_2[64];
@@ -67,11 +73,3 @@ extern int *p0;
 extern int *p1;
 extern int *p2;
 extern int *p3;
-// extern struct pstat pstat_var;
-// Process memory is laid out contiguously, low addresses first:
-//   text
-//   original data and bss
-//   fixed-size stack
-//   expandable heap
-// struct pstat;
-// int getpinfo(struct pstat * pstat);

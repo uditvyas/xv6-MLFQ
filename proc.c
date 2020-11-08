@@ -6,8 +6,8 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-//#include "pstat.h"
 
+// Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
 int q0 = -1;
 int q1 = -1;
@@ -22,9 +22,6 @@ struct proc q_1[64];
 struct proc q_2[64];
 struct proc q_3[64];
 
-// struct proc *
-//struct pstat pstat_var;
-
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -35,7 +32,6 @@ static struct proc *initproc;
 int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
-extern uint ticks;
 
 static void wakeup1(void *chan);
 
@@ -50,7 +46,6 @@ int
 cpuid() {
   return mycpu()-cpus;
 }
-
 
 // Must be called with interrupts disabled to avoid the caller being
 // rescheduled between reading lapicid and running through the loop.
@@ -99,7 +94,9 @@ allocproc(void)
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == UNUSED){
+    if(p->state == UNUSED)
+    {
+      // Allocating new peocess a priority in initial ticks as 0 in all priority levels
       p->priority = 0;
       p->myticks[0] = 0;
       p->myticks[1] = 0;
@@ -107,33 +104,19 @@ allocproc(void)
       p->myticks[3] = 0;
       q0++;
       q_0[q0] = *p;
-      // pstat_var.inuse[p->pid] = 1;
-			// pstat_var.priority[p->pid] = p->priority;
-			// pstat_var.myticks[p->pid][0] = 0;
-			// pstat_var.myticks[p->pid][1] = 0;
-			// pstat_var.myticks[p->pid][2] = 0;
-			// pstat_var.myticks[p->pid][3] = 0;
-			// pstat_var.pid[p->pid] = p->pid;
-
-      goto found;}
-
+      goto found;
+    }
   release(&ptable.lock);
   return 0;
 
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+
   p->priority = 0;  //default
   p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   q0++;
   q_0[q0] = *p;
-  // pstat_var.inuse[p->pid] = 1;
-	// pstat_var.priority[p->pid] = p->priority;
-	// pstat_var.myticks[p->pid][0] = 0;
-	// pstat_var.myticks[p->pid][1] = 0;
-	// pstat_var.myticks[p->pid][2] = 0;
-	// pstat_var.myticks[p->pid][3] = 0;
-	// pstat_var.pid[p->pid] = p->pid;
 
   release(&ptable.lock);
 
@@ -357,6 +340,73 @@ wait(void)
   }
 }
 
+/*
+BOOST
+*/
+void
+Boost(void)
+{
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->priority!=0){
+      p->priority = 0;
+      q0++;
+      q_0[q0] = *p;
+    }
+    p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
+  }
+  // Remove all process from other queues
+  q1=q2=q3=-1;
+  yield();
+}
+
+/*
+MLFQ ROUND ROBIN IMPLEMENTATION
+*/
+void 
+mlfq(struct proc *q_current,struct proc *q_next,int *current, int *next,struct cpu *c)
+{
+  struct proc *p;  
+  for(int i=0;i<*current+1;i++){
+    p = &q_current[i];
+    if(p->state != RUNNABLE)
+      continue;
+    // p = q_current[i];
+    // p->myticks[p->priority]++;
+    c->proc = p;
+    switchuvm(p);
+    p->state = RUNNING;
+    swtch(&(c->scheduler), p->context);
+    cprintf("Context Switch!\n");
+    switchkvm();
+    //pstat_var.myticks[p->pid][0] = p->myticks[0];
+
+    
+    // paa pbb pdd pee pff pff - q2
+    // p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 pcc - q3
+    // pa pb pd pe p3 pc pc- q1
+    // next = 11, current = 5
+
+    // Left shift before the below code
+    if(p->myticks[p->priority] == clkPerPrio[p->priority]){
+      (*next)++;
+      p->myticks[p->priority] = 0;
+      if (p->priority!=3)   
+        p->priority=p->priority+1;
+	    //pstat_var.priority[p->pid] = p->priority;
+	    q_next[*next] = *p;
+	    /*delete proc from q0*/
+	    // q_current[i]=0;
+	    for(int j=i;j<=*current-1;j++){
+        cprintf("Left Shift!\n");
+	      q_current[j] = q_current[j+1];
+      }
+	    (*current)--;
+      // c->proc = 0;
+    }
+  }
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -371,8 +421,10 @@ scheduler(void)
   // struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
+  //cprintf("********OUTSIDE scheduler LOOP!********\n");
   for(;;){
+    // cprintf("********INSIDE scheduler LOOP!********\n");
     // Enable interrupts on this processor.
     sti();
 
@@ -399,77 +451,29 @@ scheduler(void)
     // }
 
     if(q0!=-1){
+      // cprintf("First Queue Khali!\n");
       mlfq(q_0,q_1,p0,p1,c);
     }
 
     if(q1!=-1){
+      // cprintf("Second Queue Khali!\n");
       mlfq(q_1,q_2,p1,p2,c);
     }
 
     if(q2!=-1){
+      cprintf("Third Queue Khali!\n");
       mlfq(q_2,q_3,p2,p3,c);
     }
 
     if(q3!=-1){
+      // cprintf("fourth Queue Khali!\n");
       mlfq(q_3,q_3,p3,p3,c);
     }
     c->proc = 0;
     
     release(&ptable.lock);
-
   }
 }
-
-void
-Boost(void)
-{
-  struct proc *p;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if (p->priority!=0){
-      p->priority = 0;
-      q0++;
-      q_0[q0] = *p;
-    }
-    p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
-  }
-  // Remove all process from other queues
-  q1=q2=q3=-1;
-  yield();
-}
-
-void 
-mlfq(struct proc *q_current,struct proc *q_next,int *current, int *next,struct cpu *c)
-{
-  struct proc *p;  
-  for(int i=0;i<*current+1;i++){
-    p = &q_current[i];
-    if(p->state != RUNNABLE)
-      continue;
-    // p = q_current[i];
-    // p->myticks[p->priority]++;
-    c->proc = p;
-    switchuvm(p);
-    p->state = RUNNING; 
-    swtch(&(c->scheduler), p->context);
-    switchkvm();
-    //pstat_var.myticks[p->pid][0] = p->myticks[0];
-    if(p->myticks[0] == clkPerPrio[0]){
-      (*next)++;
-      p->myticks[p->priority] = 0;
-      if (p->priority!=3)   p->priority=p->priority+1;
-	    //pstat_var.priority[p->pid] = p->priority;
-	    q_next[*next] = *p;
-	    /*delete proc from q0*/
-	    // q_current[i]=0;
-	    for(int j=i;j<=*current-1;j++){
-	      q_current[j] = q_current[j+1];
-      }
-	    (*current)--;
-      // c->proc = 0;
-    }
-  }
-}
-
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -576,12 +580,8 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan){
-      // p->myticks[0] = 0;
-      // p->myticks[1] = 0;
-      // p->myticks[2] = 0;
-      // p->myticks[3] = 0;
-
+    if(p->state == SLEEPING && p->chan == chan)
+    {
       p->state = RUNNABLE;
       if(p->priority == 0){
         q0++;
@@ -590,14 +590,14 @@ wakeup1(void *chan)
         }
         q_0[0] = *p;
       }
-      else if(p->priority == 0){
+      else if(p->priority == 1){
         q1++;
         for(int i=q1;i>0;i--){
           q_1[i] = q_1[i-1];
         }
         q_1[0] = *p;
       }
-      else if(p->priority == 0){
+      else if(p->priority == 2){
         q2++;
         for(int i=q2;i>0;i--){
           q_2[i] = q_2[i-1];
@@ -681,47 +681,4 @@ procdump(void)
     }
     cprintf("\n");
   }
-
 }
-
-
-int cps()
-{
-    struct proc *p;
-    sti();
-    acquire(&ptable.lock);
-    cprintf("name \t pid \t state \t\t priority \n");
-    for(p=ptable.proc;p<&ptable.proc[NPROC]; p++){
-	if(p->state == SLEEPING)
- 		cprintf("%s \t %d \t SLEEPING \t %d\n",p->name,p->pid,p->priority);
-	else if(p->state == RUNNING)
-		cprintf("%s \t %d \t RUNNING \t %d\n",p->name,p->pid,p->priority);
-	else if(p->state == RUNNABLE)
-		cprintf("%s \t %d \t RUNNABLE \t %d\n",p->name,p->pid,p->priority);
- } 
-release(&ptable.lock);
-return 22;  
-}
-
-// int
-// getpinfo(struct pstat* pstat)
-// {
-//   struct proc *p;
-//   int i = 0;
-//   acquire(&ptable.lock);
-//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-//     if(p->state == UNUSED)
-//       continue;
-//     pstat->inuse[i] = 1;
-//     pstat->pid[i] = p->pid;
-//     pstat->priority[i] = p->priority;
-    
-//     int j;
-//     for(j = 0; j < 4; ++j){
-//       pstat->myticks[i][j] = p->ticks[j];
-//     }
-//     ++i;
-//   }
-//   release(&ptable.lock);
-//   return 0;
-// }

@@ -50,7 +50,8 @@ trap(struct trapframe *tf)
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);
-      ticks++;
+      ticks++; 
+      // cprintf("Ticks Badhaya gaya 1 matra se!\n");
       if(myproc()){
         myproc()->myticks[myproc()->priority]++;
       }
@@ -105,20 +106,21 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
+  uint xticks;
   if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER){
-      uint xticks;
+     tf->trapno == T_IRQ0+IRQ_TIMER)
+     {
       acquire(&tickslock);
       xticks = ticks;
       release(&tickslock);
       if(xticks%100 == 0)
-      {
+      { 
+        cprintf("Hamesha boost hi print hoga!\n");
         Boost();
       }
-
+      cprintf("Idhar yield hoga!\n");
       yield();
     }
-    
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
