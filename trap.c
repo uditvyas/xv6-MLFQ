@@ -15,6 +15,7 @@ struct spinlock tickslock;
 uint ticks;
 uint xticks;
 uint diff = 0;
+uint boost_count=0;
 
 void
 tvinit(void)
@@ -108,22 +109,43 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
-  
+  if(tf->trapno == T_IRQ0+IRQ_TIMER){
+    acquire(&tickslock);
+    xticks = ticks;
+    
+    //cprintf("num of ticks is %d \n",xticks);
+    release(&tickslock);
+    // if(xticks/100 - diff/100 > 0)
+    if(xticks - diff >= 500)
+    { 
+      //cprintf("Going in boost\n");
+      diff = xticks;
+      // cprintf("%d\n", xticks);
+      boost_count++;
+      // cprintf("%d\n",boost_count);
+      Boost();
+    }
+  }
+
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER)
      {
-      acquire(&tickslock);
-      xticks = ticks;
+      // acquire(&tickslock);
+      // xticks = ticks;
       
-      //cprintf("num of ticks is %d \n",xticks);
-      release(&tickslock);
-      if(xticks/100 - diff/100 > 0)
-      { 
-        //cprintf("Going in boost\n");
-        diff = xticks;
-        Boost();
-      }
-      diff = xticks;
+      // //cprintf("num of ticks is %d \n",xticks);
+      // release(&tickslock);
+      // // if(xticks/100 - diff/100 > 0)
+      // if(xticks - diff >= 100)
+      // { 
+      //   //cprintf("Going in boost\n");
+      //   diff = xticks;
+      //   // cprintf("%d\n", xticks);
+      //   boost_count++;
+      //   cprintf("%d\n",boost_count);
+      //   Boost();
+      // }
+      // diff = xticks;
       //cprintf("Idhar yield hoga!\n");
       yield();
     }

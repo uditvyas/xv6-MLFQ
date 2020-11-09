@@ -356,7 +356,8 @@ BOOST
 void
 Boost(void)
 {
-  //cprintf("Boosting");
+  // cprintf("Boosting\n");
+  
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if (p->priority!=0){
@@ -370,7 +371,7 @@ Boost(void)
 
   // Remove all process from other queues
   q1=q2=q3=-1;
-  yield();
+  // yield();
 }
 
 /*
