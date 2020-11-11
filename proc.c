@@ -718,3 +718,9 @@ int cps()
 release(&ptable.lock);
 return 22;  
 }
+
+int getpinfo(struct pstat* pstat)
+{
+;
+return 23;
+}

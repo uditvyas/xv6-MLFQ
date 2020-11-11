@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "pstat.h"
 
 int
 sys_fork(void)
@@ -93,4 +94,13 @@ int
 sys_cps(void)
 {
   return cps();
+}
+int
+sys_getpinfo(void)
+{
+  struct pstat* pstat;
+  
+  if(argptr(1, (void*)&pstat, sizeof(*pstat)) < 0)
+    return -1;
+  return getpinfo(pstat);
 }
