@@ -22,6 +22,7 @@ struct proc *q_1[64];
 struct proc *q_2[64];
 struct proc *q_3[64];
 
+struct pstat pstat_var;
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -388,13 +389,30 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       // cprintf("not finding runnable");
       continue;
     }
-
-      
+          
     // p = q_current[i];
     // p->myticks[p->priority]++;
     c->proc = p;
     switchuvm(p);
     p->state = RUNNING;
+
+    int i=0;
+    struct proc *proc_pstat;  
+    for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
+      if(proc_pstat->pid==p->pid){
+        pstat_var.inuse[i] = 1;
+        pstat_var.pid[i] = p->pid;
+        pstat_var.priority[i] = p->priority;
+        pstat_var.state[i] = p->state;
+        int j;
+        for(j = 0; j < 4; ++j){
+          pstat_var.ticks[i][j] = p->myticks[j];
+        }
+        // cprintf("%d \t\t %d \n",pstat_var.pid[i], pstat_var.priority[i]);
+      }
+      i++;
+    }
+
     swtch(&(c->scheduler), p->context);
     // cprintf("Context Switch!\n");
     switchkvm();
@@ -719,8 +737,36 @@ release(&ptable.lock);
 return 22;  
 }
 
-int getpinfo(struct pstat* pstat)
-{
-;
-return 23;
+// int getpinfo(struct pstat* pstat)
+// {
+// ;
+// return 23;
+// }
+int
+getpinfo(struct pstat* pstat_xyz)
+{ 
+  // pstat = malloc(sizeof(struct pstat*));
+  // struct proc *p;
+  // int i = 0;
+  // acquire(&ptable.lock);
+  cprintf("pid \t state \t\t priority \t\t ticks \n");
+  for(int i=0;i<NPROC;i++){
+    // if(p->state == UNUSED)
+    //   continue;
+    // cprintf("hello");
+    // pstat->inuse[i] = 1;
+    // pstat->pid[i] = p->pid;
+    // pstat->priority[i] = p->priority;
+    // pstat->state[i] = p->state;
+    // int j;
+    // for(j = 0; j < 4; ++j){
+    //   pstat->ticks[i][j] = p->myticks[j];
+    // }
+    if(pstat_var.inuse[i] == 1)
+      cprintf("%d \t %s \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.state[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+    // ++i;
+  }
+
+  // release(&ptable.lock);
+  return 0;
 }
