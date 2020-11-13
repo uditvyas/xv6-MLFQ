@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#define NULL ((void *)0)
 
 // Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
@@ -358,20 +359,24 @@ void
 Boost(void)
 {
   // cprintf("Boosting\n");
-  
+  getpinfo(NULL);
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if (p->priority!=0){
+      cprintf("%d\n",p->priority);
       p->priority = 0;
       q0++;
       q_0[q0] = p;
+      cprintf("%d  Process BOOSTED\n ",p->pid);
       
     }
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
+    // cprintf("hello \t");
   }
 
   // Remove all process from other queues
   q1=q2=q3=-1;
+  getpinfo(NULL);
   // yield();
 }
 
