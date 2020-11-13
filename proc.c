@@ -359,15 +359,17 @@ void
 Boost(void)
 {
   // cprintf("Boosting\n");
-  getpinfo(NULL);
+  sti();
+  acquire(&ptable.lock);
+  //getpinfo(NULL);
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if (p->priority!=0){
-      cprintf("%d\n",p->priority);
+      //cprintf("%d\n",p->priority);
       p->priority = 0;
       q0++;
       q_0[q0] = p;
-      cprintf("%d  Process BOOSTED\n ",p->pid);
+      //cprintf("%d  Process BOOSTED\n ",p->pid);
       
     }
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
@@ -376,8 +378,9 @@ Boost(void)
 
   // Remove all process from other queues
   q1=q2=q3=-1;
-  getpinfo(NULL);
+  //getpinfo(NULL);
   // yield();
+  release(&ptable.lock);
 }
 
 /*
@@ -401,36 +404,9 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     switchuvm(p);
     p->state = RUNNING;
 
-    int i=0;
-    struct proc *proc_pstat;  
-    for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
-      if(proc_pstat->pid==p->pid){
-        pstat_var.inuse[i] = 1;
-        pstat_var.pid[i] = p->pid;
-        pstat_var.priority[i] = p->priority;
-        pstat_var.state[i] = p->state;
-        safestrcpy(pstat_var.name[i],p->name, sizeof(p->name));
-        int j;
-        for(j = 0; j < 4; ++j){
-          pstat_var.ticks[i][j] = p->myticks[j];
-        }
-        // cprintf("%d \t\t %d \n",pstat_var.pid[i], pstat_var.priority[i]);
-      }
-      i++;
-    }
-
     swtch(&(c->scheduler), p->context);
     // cprintf("Context Switch!\n");
     switchkvm();
-    //pstat_var.myticks[p->pid][0] = p->myticks[0];
-
-    
-    // paa pbb pdd pee pff pff - q2
-    // p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 pcc - q3
-    // pa pb pd pe p3 pc pc- q1
-    // next = 11, current = 5
-
-    // Left shift before the below code
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
       (*next)++;
       p->myticks[p->priority] = 0;
@@ -448,6 +424,9 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       // c->proc = 0;
     }
   }
+  
+ 
+
 }
 
 //PAGEBREAK: 42
@@ -752,6 +731,25 @@ int
 getpinfo(struct pstat* pstat_xyz)
 { 
 
+  int i=0;
+    struct proc *proc_pstat;  
+    for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
+      
+        pstat_var.inuse[i] = 1;
+        pstat_var.pid[i] = proc_pstat->pid;
+        pstat_var.priority[i] = proc_pstat->priority;
+        pstat_var.state[i] = proc_pstat->state;
+        safestrcpy(pstat_var.name[i],proc_pstat->name, sizeof(proc_pstat->name));
+        int j;
+        for(j = 0; j < 4; ++j){
+          pstat_var.ticks[i][j] = proc_pstat->myticks[j];
+        }
+        // cprintf("%d \t\t %d \n",pstat_var.pid[i], pstat_var.priority[i]);
+      
+      i++;
+    }
+    
+
   cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
   for(int i=0;i<NPROC;i++){
     if(pstat_var.inuse[i] == 1){
@@ -763,8 +761,8 @@ getpinfo(struct pstat* pstat_xyz)
         cprintf("%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == ZOMBIE)
         cprintf("%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-      else if(pstat_var.state[i] == UNUSED)
-        cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+      //else if(pstat_var.state[i] == UNUSED)
+        //cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == EMBRYO)
         cprintf("%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
 
