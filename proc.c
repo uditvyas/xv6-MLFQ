@@ -404,6 +404,7 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
         pstat_var.pid[i] = p->pid;
         pstat_var.priority[i] = p->priority;
         pstat_var.state[i] = p->state;
+        safestrcpy(pstat_var.name[i],p->name, sizeof(p->name));
         int j;
         for(j = 0; j < 4; ++j){
           pstat_var.ticks[i][j] = p->myticks[j];
@@ -746,21 +747,21 @@ int
 getpinfo(struct pstat* pstat_xyz)
 { 
 
-  cprintf("pid \t state \t\t priority \t\t ticks \n");
+  cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
   for(int i=0;i<NPROC;i++){
     if(pstat_var.inuse[i] == 1){
       if(pstat_var.state[i] == SLEEPING)
-        cprintf("%d \t SLEEPING \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+        cprintf("%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == RUNNING)
-        cprintf("%d \t RUNNING \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+        cprintf("%d \t %s \t\tRUNNING \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == RUNNABLE)
-        cprintf("%d \t RUNNABLE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+        cprintf("%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == ZOMBIE)
-        cprintf("%d \t ZOMBIE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+        cprintf("%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == UNUSED)
-        cprintf("%d \t UNUSED \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+        cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
       else if(pstat_var.state[i] == EMBRYO)
-        cprintf("%d \t EMBRYO \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
+        cprintf("%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
 
     }
   }

@@ -66,6 +66,7 @@ struct pstat{
   int priority[NPROC];  // current priority level of each process (0-3)
   enum procstate state[NPROC];  // current state (e.g., SLEEPING or RUNNABLE) of each process
   int ticks[NPROC][4];  // number of ticks each process has accumulated at each of 4 priorities
+  char name[NPROC][16]; // Name of the process
 };
 /*Global Definition of queues and pointers to queues sizes*/
 // extern struct proc *q_0[64];
