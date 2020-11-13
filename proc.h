@@ -60,11 +60,22 @@ struct proc {
 //   fixed-size stack
 //   expandable heap
 
+struct pstat{
+  int inuse[NPROC]; // whether this slot of the process table is in use (1 or 0)
+  int pid[NPROC];   // PID of each process
+  int priority[NPROC];  // current priority level of each process (0-3)
+  enum procstate state[NPROC];  // current state (e.g., SLEEPING or RUNNABLE) of each process
+  int ticks[NPROC][4];  // number of ticks each process has accumulated at each of 4 priorities
+};
 /*Global Definition of queues and pointers to queues sizes*/
-extern struct proc *q_0[64];
-extern struct proc *q_1[64];
-extern struct proc *q_2[64];
-extern struct proc *q_3[64];
+// extern struct proc *q_0[64];
+// extern struct proc *q_1[64];
+// extern struct proc *q_2[64];
+// extern struct proc *q_3[64];
+// extern struct proc *q_0[64];
+// extern struct proc *q_1[64];
+// extern struct proc *q_2[64];
+// struct proc *q_3[64];
 extern int q0;
 extern int q1;
 extern int q2;
