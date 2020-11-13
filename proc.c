@@ -22,7 +22,10 @@ struct proc *q_0[64];
 struct proc *q_1[64];
 struct proc *q_2[64];
 struct proc *q_3[64];
-
+int count;
+// int count1 = 0;
+// int count2 = 0;
+// int count3 = 0;
 struct pstat pstat_var;
 struct {
   struct spinlock lock;
@@ -364,18 +367,22 @@ Boost(void)
   //getpinfo(NULL);
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    int d = p->priority;
     if (p->priority!=0){
       //cprintf("%d\n",p->priority);
+      
       p->priority = 0;
       q0++;
       q_0[q0] = p;
-      //cprintf("%d  Process BOOSTED\n ",p->pid);
+      
       
     }
+    
+    cprintf("BOOSTING process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
     // cprintf("hello \t");
   }
-
+  
   // Remove all process from other queues
   q1=q2=q3=-1;
   //getpinfo(NULL);
@@ -389,15 +396,18 @@ MLFQ ROUND ROBIN IMPLEMENTATION
 void 
 mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c)
 {
+  count = 0;
   struct proc *p;  
   //cprintf("size is %d",*current+1);
   for(int i=0;i<*current+1;i++){
     p = q_current[i];
+    
     if(p->state != RUNNABLE){
       // cprintf("not finding runnable");
+
       continue;
     }
-          
+    count++;
     // p = q_current[i];
     // p->myticks[p->priority]++;
     c->proc = p;
@@ -408,24 +418,36 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     // cprintf("Context Switch!\n");
     switchkvm();
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
+
       (*next)++;
+      int d = p->priority;
+      
+      if (p->priority!=3){   
+        count--;
+        p->priority=p->priority+1;}
+     
+     
+      
+      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
+
       p->myticks[p->priority] = 0;
-      if (p->priority!=3)   
-        p->priority=p->priority+1;
-	    //pstat_var.priority[p->pid] = p->priority;
 	    q_next[*next] = p;
 	    /*delete proc from q0*/
 	    // q_current[i]=0;
-	    for(int j=i;j<=*current-1;j++){
+      
+      
+      for(int j=i;j<=*current-1;j++){
         //cprintf("Left Shift!\n");
 	      q_current[j] = q_current[j+1];
-      }
+        }
+      
+	    
 	    (*current)--;
       // c->proc = 0;
     }
   }
   
- 
+
 
 }
 
@@ -470,25 +492,30 @@ scheduler(void)
     //   // Remove all process from other queues
     //   *p1=*p2=*p3=-1;
     // }
-
+    repeat:
     if(q0!=-1){
       //cprintf("First Queue Khali!\n");
       mlfq(q_0,q_1,p0,p1,c);
+
     }
+    if(count>0)
+      goto repeat;
 
     if(q1!=-1){
       //cprintf("Second Queue Khali!\n");
       mlfq(q_1,q_2,p1,p2,c);
     }
-
+    if(count>0)
+      goto repeat;
     if(q2!=-1){
       //cprintf("Third Queue Khali!\n");
       mlfq(q_2,q_3,p2,p3,c);
     }
-
+    if(count>0)
+      goto repeat;
     if(q3!=-1){
       //cprintf("fourth Queue Khali!\n");
-      mlfq(q_3,q_3,p3,p3,c);
+      mlfq(q_3,q_3,p3,p3,c); 
     }
     c->proc = 0;
     
@@ -661,7 +688,7 @@ kill(int pid)
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
 
-      pstat_var.inuse[i] = 0;
+      //pstat_var.inuse[i] = 0;
       release(&ptable.lock);      
       return 0;
     }
@@ -730,7 +757,8 @@ return 22;
 int
 getpinfo(struct pstat* pstat_xyz)
 { 
-
+  
+  acquire(&ptable.lock);
   int i=0;
     struct proc *proc_pstat;  
     for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
@@ -748,7 +776,7 @@ getpinfo(struct pstat* pstat_xyz)
       
       i++;
     }
-    
+  release(&ptable.lock);
 
   cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
   for(int i=0;i<NPROC;i++){
