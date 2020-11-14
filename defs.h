@@ -122,7 +122,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             cps(void);
-void            mlfq(struct proc**,struct proc**,int*,int*,struct cpu*);
+void            mlfq(struct proc**,struct proc**,int*,int*,struct cpu*, int num1, int num2);
 void            Boost(void);
 int             getpinfo(struct pstat*);
 // swtch.S
