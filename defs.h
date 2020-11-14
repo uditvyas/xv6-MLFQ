@@ -1,3 +1,5 @@
+#ifndef DEFS_H
+#define DEFS_H
 struct buf;
 struct context;
 struct file;
@@ -10,7 +12,7 @@ struct sleeplock;
 struct stat;
 struct superblock;
 struct pstat;
-
+struct Queue;
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -123,6 +125,7 @@ void            wakeup(void*);
 void            yield(void);
 int             cps(void);
 void            mlfq(struct proc**,struct proc**,int*,int*,struct cpu*, int num1, int num2);
+void            mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2);
 void            Boost(void);
 int             getpinfo(struct pstat*);
 // swtch.S
@@ -192,3 +195,4 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+#endif /* DEFS_H */

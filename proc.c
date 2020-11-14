@@ -6,12 +6,17 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-#define NULL ((void *)0)
 
 // Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
 
 // int is_break = 0;
+// struct Queue;
+struct Queue* Q_0;
+struct Queue* Q_1;
+struct Queue* Q_2;
+struct Queue* Q_3; 
+
 int q0 = -1;
 int q1 = -1;
 int q2 = -1;
@@ -140,6 +145,7 @@ found:
   q0++;
 
   q_0[q0] = p;
+  enQueue(Q_0,p);
 
   cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t!!\n",p->pid,p->state);
   return p;
@@ -149,7 +155,11 @@ found:
 // Set up first user process.
 void
 userinit(void)
-{ 
+{   
+  Q_0 = createQueue();
+  Q_1 = createQueue();
+  Q_2 = createQueue();
+  Q_3 = createQueue();
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
@@ -353,6 +363,7 @@ Boost(void)
   acquire(&ptable.lock);
   //getpinfo(NULL);
   struct proc *p;
+  QNode *node;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     // int d = p->priority;
     if (p->priority!=0){
@@ -361,8 +372,14 @@ Boost(void)
       p->priority = 0;
       q0++;
       q_0[q0] = p;   
+      enQueue(Q_0,p);
     }
-    
+    node = Q_1->front;
+    while(node->next)deQueue(Q_1);
+    node = Q_2->front;
+    while(node->next)deQueue(Q_2);
+    node = Q_3->front;
+    while(node->next)deQueue(Q_3);
     // cprintf("BOOSTING process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   }
@@ -372,6 +389,47 @@ Boost(void)
   cprintf("BOOST DONE\n");
   release(&ptable.lock);
 }
+
+
+void 
+mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2)
+{ 
+
+  QNode *Q_node = Q_current->front;
+  struct proc *process;
+  while(Q_node != NULL){
+    process = Q_node->process;
+
+    if(process->state != RUNNABLE){
+      deQueue(Q_current);
+      enQueue(Q_current, process);
+      continue;
+    }
+
+    c->proc = process;
+    if(num1!=process->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",process->priority,num1,process->name);
+    switchuvm(process);
+    process->state = RUNNING;
+
+    swtch(&(c->scheduler), process->context);
+    switchkvm();
+    if(process->myticks[process->priority] == clkPerPrio[process->priority]){
+      enQueue(Q_next, process);
+      deQueue(Q_current);
+      int d = process->priority;
+      if (process->priority!=3){
+        process->priority=process->priority+1;}    
+      
+      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",
+                            process->name,process->pid,process->priority,d,process->myticks[d]);
+    process->myticks[d] = 0;
+    Q_node = Q_node->next;
+    }
+  }
+}
+
+
+
 
 /*
 MLFQ ROUND ROBIN IMPLEMENTATION
@@ -451,6 +509,11 @@ void
 scheduler(void)
 {
   // struct proc *p;
+  // Q_0 = createQueue();
+  // Q_1 = createQueue();
+  // Q_2 = createQueue();
+  // Q_3 = createQueue(); 
+
   struct cpu *c = mycpu();
   c->proc = 0;
 
@@ -462,6 +525,12 @@ scheduler(void)
     acquire(&ptable.lock);
     // cprintf("QUEUE 0 STARTED !!\n");
     // repeat:
+
+    // mlfqQ(Q_0,Q_1,c,0,1);
+    // mlfqQ(Q_1,Q_2,c,1,2);
+    // mlfqQ(Q_2,Q_3,c,2,3);
+    // mlfqQ(Q_3,Q_3,c,3,3);
+
     if(q0!=-1){
       mlfq(q_0,q_1,p0,p1,c, 0,1);
     }
@@ -601,7 +670,7 @@ wakeup1(void *chan)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan)
-    {
+    { 
       p->state = RUNNABLE;
       if(p->priority == 0){
         q0++;

@@ -1,3 +1,5 @@
+#ifndef USER_H
+#define USER_H
 struct stat;
 struct rtcdate;
 struct pstat;
@@ -36,6 +38,8 @@ void printf(int, const char*, ...);
 char* gets(char*, int max);
 uint strlen(const char*);
 void* memset(void*, int, uint);
-void* malloc(uint);
-void free(void*);
+extern void* malloc(uint);
+extern void free(void*);
 int atoi(const char*);
+
+#endif /* USER_H */
