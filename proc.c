@@ -10,6 +10,12 @@
 
 // Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
+
+int check0 = 0;
+int check1 = 0;
+int check2 = 0;
+int check3 = 0;
+int is_break = 0;
 int q0 = -1;
 int q1 = -1;
 int q2 = -1;
@@ -103,6 +109,7 @@ allocproc(void)
     if(p->state == UNUSED)
     {
       // Allocating new peocess a priority in initial ticks as 0 in all priority levels
+      check0 ++;
       p->priority = 0;
       //cprintf("priority 0\n");
       // p->myticks[0] = 0;
@@ -397,6 +404,7 @@ void
 mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c)
 {
   count = 0;
+  is_break = 0;
   struct proc *p;  
   //cprintf("size is %d",*current+1);
   for(int i=0;i<*current+1;i++){
@@ -407,7 +415,13 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
 
       continue;
     }
-    count++;
+
+    // int curr_prio = p->priority;
+    // // if(p->priority==0){
+    // //   check0++;
+    // // }
+    
+    // count++;
     // p = q_current[i];
     // p->myticks[p->priority]++;
     c->proc = p;
@@ -422,13 +436,26 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       (*next)++;
       int d = p->priority;
       
-      if (p->priority!=3){   
-        count--;
-        p->priority=p->priority+1;}
-     
-     
+      if (p->priority!=3){
+
+        if(p->priority==0){
+          check0--;
+        }
+        // count--;
+        p->priority=p->priority+1;}    
       
       cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
+
+      struct proc *t;
+      // cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
+      for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
+	      if(t->state == SLEEPING)
+ 		      cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
+	      else if(t->state == RUNNING)
+		      cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
+	      else if(t->state == RUNNABLE)
+		      cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
+      }
 
       p->myticks[p->priority] = 0;
 	    q_next[*next] = p;
@@ -445,11 +472,22 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
 	    (*current)--;
       // c->proc = 0;
     }
+    // check_and_send();
+    if(check0 > 0){
+      is_break = 1;
+      break;
+    }
+    // if(check1 > 0){
+    //   is_break = 1;
+    //   break;
+    // }
+    // if(check2 > 0){
+    //   is_break = 1;
+    //   break;
+    // }
   }
-  
-
-
 }
+
 
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
@@ -465,10 +503,9 @@ scheduler(void)
   // struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  //cprintf("********OUTSIDE scheduler LOOP!********\n");
+
   for(;;){
-    //cprintf("********INSIDE scheduler LOOP!********\n");
-    // Enable interrupts on this processor.
+
     sti();
 
     // uint xticks;
@@ -478,40 +515,25 @@ scheduler(void)
     
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-
-    // if(xticks % 100 == 0){
-    //   // Add all process into highest priority
-    //   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    //     if (p->priority!=0){
-    //       p->priority = 0;
-    //       q0++;
-    //       q_0[q0] = *p;
-    //     }
-    //     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
-    //   }
-    //   // Remove all process from other queues
-    //   *p1=*p2=*p3=-1;
-    // }
+   
     repeat:
     if(q0!=-1){
       //cprintf("First Queue Khali!\n");
       mlfq(q_0,q_1,p0,p1,c);
-
     }
-    if(count>0)
+    if(is_break)
       goto repeat;
-
     if(q1!=-1){
       //cprintf("Second Queue Khali!\n");
       mlfq(q_1,q_2,p1,p2,c);
     }
-    if(count>0)
+    if(is_break)
       goto repeat;
     if(q2!=-1){
       //cprintf("Third Queue Khali!\n");
       mlfq(q_2,q_3,p2,p3,c);
     }
-    if(count>0)
+    if(is_break)
       goto repeat;
     if(q3!=-1){
       //cprintf("fourth Queue Khali!\n");
@@ -522,6 +544,8 @@ scheduler(void)
     release(&ptable.lock);
   }
 }
+
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -606,6 +630,10 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+
+  if(p->priority==0){
+    check0--;
+  }
 
   sched();
 
