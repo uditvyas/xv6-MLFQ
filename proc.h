@@ -85,86 +85,168 @@ extern int *p3;
 extern uint diff;
 
 // #################################################################################
+// typedef long Align;
+// typedef union header Header;
+// union header {
+//   struct {
+//     union header *ptr;
+//     uint size;
+//   } s;
+//   Align x;
+// };
 
-typedef struct QNode { 
-	struct proc *process; 
-	struct QNode* next; 
-}QNode; 
 
-// The queue, front stores the front node of LL and rear stores the 
-// last node of LL 
-struct Queue { 
-	struct QNode *front, *rear; 
-}; 
 
-// A utility function to create a new linked list node. 
-struct QNode* newNode(struct proc* k) 
-{ 
-	struct QNode* temp = (struct QNode*)malloc(sizeof(struct QNode)); 
-	temp->process = k; 
-	temp->next = NULL; 
-	return temp; 
-} 
+// // static Header base;
+// // static Header *freep;
 
-// A utility function to create an empty queue 
-struct Queue* createQueue() 
-{ 
-	struct Queue* q = (struct Queue*)malloc(sizeof(struct Queue)); 
-	q->front = q->rear = NULL; 
-	return q; 
-} 
+// // void*
+// // xv6_malloc(uint nbytes)
+// // {
+// //   Header *p, *prevp;
+// //   uint nunits;
 
-// The function to add a key k to q 
-void enQueue(struct Queue* q, struct proc *k) 
-{ 
-	// Create a new LL node 
-	struct QNode* temp = newNode(k); 
+// //   nunits = (nbytes + sizeof(Header) - 1)/sizeof(Header) + 1;
+// //   if((prevp = freep) == 0){
+// //     base.s.ptr = freep = prevp = &base;
+// //     base.s.size = 0;
+// //   }
+// //   for(p = prevp->s.ptr; ; prevp = p, p = p->s.ptr){
+// //     if(p->s.size >= nunits){
+// //       if(p->s.size == nunits)
+// //         prevp->s.ptr = p->s.ptr;
+// //       else {
+// //         p->s.size -= nunits;
+// //         p += p->s.size;
+// //         p->s.size = nunits;
+// //       }
+// //       freep = prevp;
+// //       return (void*)(p + 1);
+// //     }
+// //     if(p == freep)
+// //       if((p = xv6_morecore(nunits)) == 0)
+// //         return 0;
+// //   }
+// // }
 
-	// If queue is empty, then new node is front and rear both 
-	if (q->rear == NULL) { 
-		q->front = q->rear = temp; 
-		return; 
-	} 
+// // static Header*
+// // xv6_morecore(uint nu)
+// // {
+// //   char *p;
+// //   Header *hp;
 
-	// Add the new node at the end of queue and change rear 
-	q->rear->next = temp; 
-	q->rear = temp; 
-} 
+// //   if(nu < 4096)
+// //     nu = 4096;
+// //   p = sbrk(nu * sizeof(Header));
+// //   if(p == (char*)-1)
+// //     return 0;
+// //   hp = (Header*)p;
+// //   hp->s.size = nu;
+// //   xv6_free((void*)(hp + 1));
+// //   return freep;
+// // }
 
-// Function to remove a key from given queue q 
-void deQueue(struct Queue* q) 
-{ 
-	// If queue is empty, return NULL. 
-	if (q->front == NULL) 
-		return; 
+// // void
+// // xv6_free(void *ap)
+// // {
+// //   Header *bp, *p;
 
-	// Store previous front and move front one node ahead 
-	struct QNode* temp = q->front; 
+// //   bp = (Header*)ap - 1;
+// //   for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+// //     if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+// //       break;
+// //   if(bp + bp->s.size == p->s.ptr){
+// //     bp->s.size += p->s.ptr->s.size;
+// //     bp->s.ptr = p->s.ptr->s.ptr;
+// //   } else
+// //     bp->s.ptr = p->s.ptr;
+// //   if(p + p->s.size == bp){
+// //     p->s.size += bp->s.size;
+// //     p->s.ptr = bp->s.ptr;
+// //   } else
+// //     p->s.ptr = bp;
+// //   freep = p;
+// // }
 
-	q->front = q->front->next; 
+// typedef struct QNode { 
+// 	struct proc *process; 
+// 	struct QNode* next; 
+// }QNode; 
 
-	// If front becomes NULL, then change rear also as NULL 
-	if (q->front == NULL) 
-		q->rear = NULL; 
+// // The queue, front stores the front node of LL and rear stores the 
+// // last node of LL 
+// struct Queue { 
+// 	struct QNode *front, *rear; 
+// }; 
 
-	free(temp); 
-} 
-
-// Driver Program to test anove functions 
-// int main() 
+// // A utility function to create a new linked list node. 
+// struct QNode* newNode(struct proc* k) 
 // { 
-// 	struct Queue* q = createQueue(); 
-// 	enQueue(q, 10); 
-// 	enQueue(q, 20); 
-// 	deQueue(q); 
-// 	deQueue(q); 
-// 	enQueue(q, 30); 
-// 	enQueue(q, 40); 
-// 	enQueue(q, 50); 
-// 	deQueue(q); 
-// 	printf("Queue Front : %d \n", q->front->key); 
-// 	printf("Queue Rear : %d", q->rear->key); 
-// 	return 0; 
+// 	struct QNode* temp = (struct QNode*)xv6_malloc(sizeof(struct QNode)); 
+// 	temp->process = k; 
+// 	temp->next = NULL; 
+// 	return temp; 
 // } 
+
+// // A utility function to create an empty queue 
+// struct Queue* createQueue() 
+// { 
+// 	struct Queue* q = (struct Queue*)xv6_malloc(sizeof(struct Queue)); 
+// 	q->front = q->rear = NULL; 
+// 	return q; 
+// } 
+
+// // The function to add a key k to q 
+// void enQueue(struct Queue* q, struct proc *k) 
+// { 
+// 	// Create a new LL node 
+// 	struct QNode* temp = newNode(k); 
+
+// 	// If queue is empty, then new node is front and rear both 
+// 	if (q->rear == NULL) { 
+// 		q->front = q->rear = temp; 
+// 		return; 
+// 	} 
+
+// 	// Add the new node at the end of queue and change rear 
+// 	q->rear->next = temp; 
+// 	q->rear = temp; 
+// } 
+
+// // Function to remove a key from given queue q 
+// void deQueue(struct Queue* q) 
+// { 
+// 	// If queue is empty, return NULL. 
+// 	if (q->front == NULL) 
+// 		return; 
+
+// 	// Store previous front and move front one node ahead 
+// 	struct QNode* temp = q->front; 
+
+// 	q->front = q->front->next; 
+
+// 	// If front becomes NULL, then change rear also as NULL 
+// 	if (q->front == NULL) 
+// 		q->rear = NULL; 
+
+// 	xv6_free(temp); 
+// } 
+
+// // Driver Program to test anove functions 
+// // int main() 
+// // { 
+// // 	struct Queue* q = createQueue(); 
+// // 	enQueue(q, 10); 
+// // 	enQueue(q, 20); 
+// // 	deQueue(q); 
+// // 	deQueue(q); 
+// // 	enQueue(q, 30); 
+// // 	enQueue(q, 40); 
+// // 	enQueue(q, 50); 
+// // 	deQueue(q); 
+// // 	printf("Queue Front : %d \n", q->front->key); 
+// // 	printf("Queue Rear : %d", q->rear->key); 
+// // 	return 0; 
+// // } 
 
 #endif /* PROC_H */

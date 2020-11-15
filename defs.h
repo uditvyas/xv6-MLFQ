@@ -13,6 +13,10 @@ struct stat;
 struct superblock;
 struct pstat;
 struct Queue;
+// union Header;
+// long Align;
+// struct s;
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -128,6 +132,12 @@ void            mlfq(struct proc**,struct proc**,int*,int*,struct cpu*, int num1
 void            mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2);
 void            Boost(void);
 int             getpinfo(struct pstat*);
+// void*           xv6_malloc(uint nbytes);
+
+// // proc.h
+// static          Header* xv6_morecore(uint nu);
+// void            xv6_free(void *ap);
+
 // swtch.S
 void            swtch(struct context**, struct context*);
 

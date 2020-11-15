@@ -116,7 +116,7 @@ trap(struct trapframe *tf)
     //cprintf("num of ticks is %d \n",xticks);
     release(&tickslock);
     // if(xticks/100 - diff/100 > 0)
-    if(xticks - diff >= 500)
+    if(xticks - diff >= 100)
     { 
       //cprintf("Going in boost\n");
       diff = xticks;

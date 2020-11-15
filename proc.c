@@ -7,15 +7,99 @@
 #include "proc.h"
 #include "spinlock.h"
 
+
+
 // Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
 
 // int is_break = 0;
-// struct Queue;
-struct Queue* Q_0;
-struct Queue* Q_1;
-struct Queue* Q_2;
-struct Queue* Q_3; 
+// typedef long Align;
+
+// union header {
+//   struct {
+//     union header *ptr;
+//     uint size;
+//   } s;
+//   Align x;
+// };
+
+// typedef union header Header;
+
+// static Header base;
+// static Header *freep;
+
+// void*
+// xv6_malloc(uint nbytes)
+// {
+//   Header *p, *prevp;
+//   uint nunits;
+
+//   nunits = (nbytes + sizeof(Header) - 1)/sizeof(Header) + 1;
+//   if((prevp = freep) == 0){
+//     base.s.ptr = freep = prevp = &base;
+//     base.s.size = 0;
+//   }
+//   for(p = prevp->s.ptr; ; prevp = p, p = p->s.ptr){
+//     if(p->s.size >= nunits){
+//       if(p->s.size == nunits)
+//         prevp->s.ptr = p->s.ptr;
+//       else {
+//         p->s.size -= nunits;
+//         p += p->s.size;
+//         p->s.size = nunits;
+//       }
+//       freep = prevp;
+//       return (void*)(p + 1);
+//     }
+//     if(p == freep)
+//       if((p = xv6_morecore(nunits)) == 0)
+//         return 0;
+//   }
+// }
+
+// static Header*
+// xv6_morecore(uint nu)
+// {
+//   char *p;
+//   Header *hp;
+
+//   if(nu < 4096)
+//     nu = 4096;
+//   p = sbrk(nu * sizeof(Header));
+//   if(p == (char*)-1)
+//     return 0;
+//   hp = (Header*)p;
+//   hp->s.size = nu;
+//   xv6_free((void*)(hp + 1));
+//   return freep;
+// }
+
+// void
+// xv6_free(void *ap)
+// {
+//   Header *bp, *p;
+
+//   bp = (Header*)ap - 1;
+//   for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+//     if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+//       break;
+//   if(bp + bp->s.size == p->s.ptr){
+//     bp->s.size += p->s.ptr->s.size;
+//     bp->s.ptr = p->s.ptr->s.ptr;
+//   } else
+//     bp->s.ptr = p->s.ptr;
+//   if(p + p->s.size == bp){
+//     p->s.size += bp->s.size;
+//     p->s.ptr = bp->s.ptr;
+//   } else
+//     p->s.ptr = bp;
+//   freep = p;
+// }
+
+// struct Queue* Q_0;
+// struct Queue* Q_1;
+// struct Queue* Q_2;
+// struct Queue* Q_3; 
 
 int q0 = -1;
 int q1 = -1;
@@ -142,12 +226,12 @@ found:
 
   p->priority = 0;  //default
   p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
-  q0++;
+  // q0++;
+  (*p0)++;
+  q_0[*p0] = p;
+  // enQueue(Q_0,p);
 
-  q_0[q0] = p;
-  enQueue(Q_0,p);
-
-  cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t!!\n",p->pid,p->state);
+  cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t Q0 : %d !!\n",p->pid,p->state,*p0);
   return p;
 }
 
@@ -156,10 +240,10 @@ found:
 void
 userinit(void)
 {   
-  Q_0 = createQueue();
-  Q_1 = createQueue();
-  Q_2 = createQueue();
-  Q_3 = createQueue();
+  // Q_0 = createQueue();
+  // Q_1 = createQueue();
+  // Q_2 = createQueue();
+  // Q_3 = createQueue();
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
@@ -363,70 +447,67 @@ Boost(void)
   acquire(&ptable.lock);
   //getpinfo(NULL);
   struct proc *p;
-  QNode *node;
+  // QNode *node;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     // int d = p->priority;
     if (p->priority!=0){
       //cprintf("%d\n",p->priority);
       
       p->priority = 0;
-      q0++;
-      q_0[q0] = p;   
-      enQueue(Q_0,p);
+      // q0++;
+      (*p0)++;
+      q_0[*p0] = p;   
+      // enQueue(Q_0,p);
     }
-    node = Q_1->front;
-    while(node->next)deQueue(Q_1);
-    node = Q_2->front;
-    while(node->next)deQueue(Q_2);
-    node = Q_3->front;
-    while(node->next)deQueue(Q_3);
-    // cprintf("BOOSTING process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
+    
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   }
   
   // Remove all process from other queues
-  q1=q2=q3=-1;
-  cprintf("BOOST DONE\n");
+  // q1=q2=q3=-1;
+  *p1=*p2=*p3=-1;
+
+  cprintf("\nBOOST DONE\n\n");
   release(&ptable.lock);
 }
 
 
-void 
-mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2)
-{ 
+// void 
+// mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2)
+// { 
 
-  QNode *Q_node = Q_current->front;
-  struct proc *process;
-  while(Q_node != NULL){
-    process = Q_node->process;
+//   QNode *Q_node = Q_current->front;
+//   struct proc *process;
+//   while(Q_node != NULL){
+//     process = Q_node->process;
 
-    if(process->state != RUNNABLE){
-      deQueue(Q_current);
-      enQueue(Q_current, process);
-      continue;
-    }
+//     if(process->state != RUNNABLE){
+//       deQueue(Q_current);
+//       enQueue(Q_current, process);
+//       continue;
+//     }
 
-    c->proc = process;
-    if(num1!=process->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",process->priority,num1,process->name);
-    switchuvm(process);
-    process->state = RUNNING;
+//     c->proc = process;
+//     if(num1!=process->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",process->priority,num1,process->name);
+//     switchuvm(process);
+//     process->state = RUNNING;
 
-    swtch(&(c->scheduler), process->context);
-    switchkvm();
-    if(process->myticks[process->priority] == clkPerPrio[process->priority]){
-      enQueue(Q_next, process);
-      deQueue(Q_current);
-      int d = process->priority;
-      if (process->priority!=3){
-        process->priority=process->priority+1;}    
+//     swtch(&(c->scheduler), process->context);
+//     switchkvm();
+//     if(process->myticks[process->priority] == clkPerPrio[process->priority]){
+//       enQueue(Q_next, process);
+//       deQueue(Q_current);
+//       int d = process->priority;
+//       if (process->priority!=3){
+//         process->priority=process->priority+1;}    
       
-      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",
-                            process->name,process->pid,process->priority,d,process->myticks[d]);
-    process->myticks[d] = 0;
-    Q_node = Q_node->next;
-    }
-  }
-}
+//       cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",
+//                             process->name,process->pid,process->priority,d,process->myticks[d]);
+//     process->myticks[d] = 0;
+//     Q_node = Q_node->next;
+//     }
+//   }
+// }
 
 
 
@@ -438,19 +519,25 @@ void
 mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c, int num1, int num2)
 {
   struct proc *p;  
+  // int i=0;
+  // cprintf("Current : %d\t I is : %d \t\n",*current,i);
   for(int i=0;i<*current+1;i++){
+  // while(i<*current+1){
     p = q_current[i];
     
     if(p->state != RUNNABLE){
+      // cprintf("PState %d\n",p->state);
       continue;
     }
     c->proc = p;
-    if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
+    // if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
+    // cprintf("GOING to RUNNING\n");
     switchuvm(p);
     p->state = RUNNING;
 
     swtch(&(c->scheduler), p->context);
     switchkvm();
+    // cprintf("CAME BACK AFTER RUNNING\n");
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
 
       (*next)++;
@@ -458,19 +545,19 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       if (p->priority!=3){
         p->priority=p->priority+1;}    
       
-      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);
+      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
 
-      // struct proc *t;
-      // for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
-	    //   if(t->state == SLEEPING)
- 		  //     cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
-	    //   else if(t->state == RUNNING)
-		  //     cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
-	    //   else if(t->state == RUNNABLE)
-		  //     cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
-      // }
+      struct proc *t;
+      for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
+	      if(t->state == SLEEPING)
+ 		      cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
+	      else if(t->state == RUNNING)
+		      cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
+	      else if(t->state == RUNNABLE)
+		      cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
+      }
 
-      p->myticks[p->priority] = 0;
+      p->myticks[d] = 0;
 	    q_next[*next] = p;
 
       int j;
@@ -485,9 +572,12 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       // cprintf("%d\n",*current);
       // cprintf("%d\n",j);
       i--;
-	    (*current)--;
-      // q_current[j]->state = UNUSED;
+      q_current[j] = NULL;
+	    (*current)--;      
+      
     }
+    // i++;
+    
   }
 }
 // curr = 5
@@ -531,28 +621,29 @@ scheduler(void)
     // mlfqQ(Q_2,Q_3,c,2,3);
     // mlfqQ(Q_3,Q_3,c,3,3);
 
-    if(q0!=-1){
+    if(*p0!=-1){
+      // cprintf("Queue : %d \t pointer : %d \t\n",q0,*p0);
       mlfq(q_0,q_1,p0,p1,c, 0,1);
     }
 
     // cprintf("QUEUE 0 COMPLETED !!\n");
     // cprintf("QUEUE 1 STARTED !!\n");
 
-    if(q1!=-1){
+    if(*p1!=-1){
       mlfq(q_1,q_2,p1,p2,c, 1,2);
     }
 
     // cprintf("QUEUE 1 COMPLETED !!\n");
     // cprintf("QUEUE 2 STARTED !!\n");
 
-    if(q2!=-1){
+    if(*p2!=-1){
       mlfq(q_2,q_3,p2,p3,c,2,3);
     }
 
     // cprintf("QUEUE 2 COMPLETED !!\n");
     // cprintf("QUEUE 3 STARTED !!\n");
 
-    if(q3!=-1){
+    if(*p3!=-1){
       mlfq(q_3,q_3,p3,p3,c,3,3); 
     }
     c->proc = 0;
@@ -672,34 +763,36 @@ wakeup1(void *chan)
     if(p->state == SLEEPING && p->chan == chan)
     { 
       p->state = RUNNABLE;
-      if(p->priority == 0){
-        q0++;
-        for(int i=q0;i>0;i--){
-          q_0[i] = q_0[i-1];
-        }
-        q_0[0] = p;
-      }
-      else if(p->priority == 1){
-        q1++;
-        for(int i=q1;i>0;i--){
-          q_1[i] = q_1[i-1];
-        }
-        q_1[0] = p;
-      }
-      else if(p->priority == 2){
-        q2++;
-        for(int i=q2;i>0;i--){
-          q_2[i] = q_2[i-1];
-        }
-        q_2[0] = p;
-      }
-      else{
-        q3++;
-        for(int i=q3;i>0;i--){
-          q_3[i] = q_3[i-1];
-        }
-        q_3[0] = p;
-      }
+      // if(p->priority == 0){
+      //   (*p0)++;
+      //   // q0++;
+      //   for(int i=*p0;i>0;i--){
+      //     q_0[i] = q_0[i-1];
+      //   }
+      //   q_0[0] = p;
+      // }
+      // else if(p->priority == 1){
+      //   // q1++;
+      //   (*p1)++;
+      //   for(int i=*p1;i>0;i--){
+      //     q_1[i] = q_1[i-1];
+      //   }
+      //   q_1[0] = p;
+      // }
+      // else if(p->priority == 2){
+      //   // (*p2)++;
+      //   for(int i=*p2;i>0;i--){
+      //     q_2[i] = q_2[i-1];
+      //   }
+      //   q_2[0] = p;
+      // }
+      // else{
+      //   (*p3)++;
+      //   for(int i=*p3;i>0;i--){
+      //     q_3[i] = q_3[i-1];
+      //   }
+      //   q_3[0] = p;
+      // }
     }
 }
 
