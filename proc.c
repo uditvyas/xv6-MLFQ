@@ -462,7 +462,19 @@ Boost(void)
     
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   }
-  
+
+  for(int i=0;i<*p1;i++)
+  {
+    q_1[i] = NULL;
+  }
+  for(int i=0;i<*p2;i++)
+  {
+    q_2[i] = NULL;
+  }
+  for(int i=0;i<*p3;i++)
+  {
+    q_3[i] = NULL;
+  }
   // Remove all process from other queues
   // q1=q2=q3=-1;
   *p1=*p2=*p3=-1;
@@ -518,6 +530,7 @@ MLFQ ROUND ROBIN IMPLEMENTATION
 void 
 mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c, int num1, int num2)
 {
+
   struct proc *p;  
   // int i=0;
   // cprintf("Current : %d\t I is : %d \t\n",*current,i);
@@ -530,7 +543,8 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       continue;
     }
     c->proc = p;
-    // if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
+
+    if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
     // cprintf("GOING to RUNNING\n");
     switchuvm(p);
     p->state = RUNNING;
@@ -561,7 +575,7 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
 	    q_next[*next] = p;
 
       int j;
-      for(j=i;j<=*current-1;j++){
+      for(j=i;j<*current;j++){
 	      q_current[j] = q_current[j+1];
         }     
 	    // p->state = UNUSED;
@@ -763,6 +777,7 @@ wakeup1(void *chan)
     if(p->state == SLEEPING && p->chan == chan)
     { 
       p->state = RUNNABLE;
+
       // if(p->priority == 0){
       //   (*p0)++;
       //   // q0++;
