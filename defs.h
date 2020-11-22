@@ -132,6 +132,7 @@ void            mlfq(struct proc**,struct proc**,int*,int*,struct cpu*, int num1
 void            mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2);
 void            Boost(void);
 int             getpinfo(struct pstat*);
+void            check_unused(struct proc **q_c,int *current);
 // void*           xv6_malloc(uint nbytes);
 
 // // proc.h

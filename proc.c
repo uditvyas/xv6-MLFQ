@@ -521,7 +521,25 @@ Boost(void)
 //   }
 // }
 
-
+void
+check_unused(struct proc **q_c,int *current)
+{
+  struct proc *p;  
+  for(int i=0;i<*current+1;i++){
+  
+    p = q_c[i];
+    
+    if(p->state == UNUSED){
+      int j;
+      for(j=i;j<*current;j++){
+	      q_c[j] = q_c[j+1];
+      }    
+      q_c[j] = NULL;
+      (*current)--;
+      
+    }
+  }
+}
 
 
 /*
@@ -531,27 +549,28 @@ void
 mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c, int num1, int num2)
 {
 
+  // check_unused(q_current,current);
   struct proc *p;  
-  // int i=0;
-  // cprintf("Current : %d\t I is : %d \t\n",*current,i);
+  
   for(int i=0;i<*current+1;i++){
   // while(i<*current+1){
     p = q_current[i];
-    
+    // rerun:
     if(p->state != RUNNABLE){
       // cprintf("PState %d\n",p->state);
       continue;
     }
+    check_unused(q_current,current);
     c->proc = p;
 
     if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
-    // cprintf("GOING to RUNNING\n");
+  
     switchuvm(p);
     p->state = RUNNING;
 
     swtch(&(c->scheduler), p->context);
     switchkvm();
-    // cprintf("CAME BACK AFTER RUNNING\n");
+  
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
 
       (*next)++;
@@ -578,28 +597,22 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       for(j=i;j<*current;j++){
 	      q_current[j] = q_current[j+1];
         }     
-	    // p->state = UNUSED;
-      // struct proc *k;
-      // k = q_current[j+1];
-      // cprintf("Error idhar hi aaega!\n");
-      // cprintf("PID : %d \t State: %d \t name: %s \t\n",k->pid,k->state,k->name);
-      // cprintf("%d\n",*current);
-      // cprintf("%d\n",j);
+	  
       i--;
       q_current[j] = NULL;
 	    (*current)--;      
       
     }
+    // else
+    // {
+    //   cprintf("process %s: pid :%d of priority: %d  after ticks: %d \n ",p->name,p->pid,p->priority,p->myticks[p->priority]);      
+    //   goto rerun;
+    // }
+    
     // i++;
     
   }
 }
-// curr = 5
-// curr + 1 = 6
-// i = 0
-// j = 5
-// [2S,3,4,5,6,6,6]
-// [7,8,9,0,1]
 
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
@@ -612,11 +625,7 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
 void
 scheduler(void)
 {
-  // struct proc *p;
-  // Q_0 = createQueue();
-  // Q_1 = createQueue();
-  // Q_2 = createQueue();
-  // Q_3 = createQueue(); 
+ 
 
   struct cpu *c = mycpu();
   c->proc = 0;
@@ -627,13 +636,7 @@ scheduler(void)
     
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    // cprintf("QUEUE 0 STARTED !!\n");
-    // repeat:
-
-    // mlfqQ(Q_0,Q_1,c,0,1);
-    // mlfqQ(Q_1,Q_2,c,1,2);
-    // mlfqQ(Q_2,Q_3,c,2,3);
-    // mlfqQ(Q_3,Q_3,c,3,3);
+   
 
     if(*p0!=-1){
       // cprintf("Queue : %d \t pointer : %d \t\n",q0,*p0);
