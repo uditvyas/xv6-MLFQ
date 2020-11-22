@@ -603,14 +603,18 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
 	    (*current)--;      
       
     }
+    else if(p->state == RUNNABLE)
+    {
+      i--;
+      //cprintf("process %s: pid :%d of priority: %d  after ticks: %d \n ",p->name,p->pid,p->priority,p->myticks[p->priority]);     
+    }
     // else
     // {
-    //   cprintf("process %s: pid :%d of priority: %d  after ticks: %d \n ",p->name,p->pid,p->priority,p->myticks[p->priority]);      
+    //    
     //   goto rerun;
     // }
     
-    // i++;
-    
+    // i++;  
   }
 }
 
