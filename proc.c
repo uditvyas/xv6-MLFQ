@@ -732,7 +732,7 @@ kill(int pid)
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
 
-      //pstat_var.inuse[i] = 0;
+      //pstat_xyz->inuse[i] = 0;
       release(&ptable.lock);      
       return 0;
     }
@@ -807,39 +807,44 @@ getpinfo(struct pstat* pstat_xyz)
     struct proc *proc_pstat;  
     for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
       
-        pstat_var.inuse[i] = 1;
-        pstat_var.pid[i] = proc_pstat->pid;
-        pstat_var.priority[i] = proc_pstat->priority;
-        pstat_var.state[i] = proc_pstat->state;
-        safestrcpy(pstat_var.name[i],proc_pstat->name, sizeof(proc_pstat->name));
+      if (proc_pstat->state != UNUSED)
+      {
+        pstat_xyz->inuse[i] = 1;
+        pstat_xyz->pid[i] = proc_pstat->pid;
+        pstat_xyz->priority[i] = proc_pstat->priority;
+        pstat_xyz->state[i] = proc_pstat->state;
+        safestrcpy(pstat_xyz->name[i],proc_pstat->name, sizeof(proc_pstat->name));
         int j;
         for(j = 0; j < 4; ++j){
-          pstat_var.ticks[i][j] = proc_pstat->myticks[j];
+          pstat_xyz->ticks[i][j] = proc_pstat->myticks[j];
         }
-        // cprintf("%d \t\t %d \n",pstat_var.pid[i], pstat_var.priority[i]);
-      
+        // cprintf("%d \t\t %d \n",pstat_xyz->pid[i], pstat_xyz->priority[i]);
+      // cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+      }
       i++;
     }
+    
+    // cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
+    // for(int i=0;i<64;i++){
+    //     if(pstat_xyz->inuse[i] == 1){
+    //     if(pstat_xyz->state[i] == SLEEPING)
+    //         cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+    //     else if(pstat_xyz->state[i] == RUNNING)
+    //         cprintf("\n%d \t %s \t\tRUNNING \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+    //     else if(pstat_xyz->state[i] == RUNNABLE)
+    //         cprintf("\n%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+    //     else if(pstat_xyz->state[i] == ZOMBIE)
+    //         cprintf("\n%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+    //     // else if(pstat_xyz->state[i] == UNUSED)
+    //     //     cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+    //     else if(pstat_xyz->state[i] == EMBRYO)
+    //         cprintf("\n%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+
+        // }
+    // }
+
   release(&ptable.lock);
 
-  cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
-  for(int i=0;i<NPROC;i++){
-    if(pstat_var.inuse[i] == 1){
-      if(pstat_var.state[i] == SLEEPING)
-        cprintf("%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-      else if(pstat_var.state[i] == RUNNING)
-        cprintf("%d \t %s \t\tRUNNING \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-      else if(pstat_var.state[i] == RUNNABLE)
-        cprintf("%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-      else if(pstat_var.state[i] == ZOMBIE)
-        cprintf("%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-      //else if(pstat_var.state[i] == UNUSED)
-        //cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-      else if(pstat_var.state[i] == EMBRYO)
-        cprintf("%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat_var.pid[i],pstat_var.name[i], pstat_var.priority[i],pstat_var.ticks[i][pstat_var.priority[i]]);
-
-    }
-  }
-
+  
   return 0;
 }
