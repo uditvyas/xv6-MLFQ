@@ -399,7 +399,7 @@ Boost(void)
   // q1=q2=q3=-1;
   *p1=*p2=*p3=-1;
 
-  cprintf("\nBOOST DONE\n\n");
+  // cprintf("\nBOOST DONE\n\n");
   release(&ptable.lock);
 }
 
@@ -450,7 +450,7 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     check_unused(q_current,current);
     c->proc = p;
 
-    if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
+    // if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
   
     switchuvm(p);
     p->state = RUNNING;
@@ -467,15 +467,15 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       
       cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
 
-      struct proc *t;
-      for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
-	      if(t->state == SLEEPING)
- 		      cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
-	      else if(t->state == RUNNING)
-		      cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
-	      else if(t->state == RUNNABLE)
-		      cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
-      }
+      // struct proc *t;
+      // for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
+	    //   if(t->state == SLEEPING)
+ 		  //     cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
+	    //   else if(t->state == RUNNING)
+		  //     cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
+	    //   else if(t->state == RUNNABLE)
+		  //     cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
+      // }
 
       p->myticks[d] = 0;
 	    q_next[*next] = p;
