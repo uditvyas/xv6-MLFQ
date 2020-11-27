@@ -11,12 +11,6 @@
 
 // Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
-
-
-
-
-
-
 int q0 = -1;
 int q1 = -1;
 int q2 = -1;
@@ -260,6 +254,7 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  flag0=1;
 
   release(&ptable.lock);
 
@@ -461,23 +456,23 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
 
       (*next)++;
-      // int d = p->priority;
+      int d = p->priority;
       if (p->priority!=3){
         p->priority=p->priority+1;}    
       
-      //cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
+      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
 
-      // struct proc *t;
-      // for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
-	    //   if(t->state == SLEEPING)
- 		  //     cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
-	    //   else if(t->state == RUNNING)
-		  //     cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
-	    //   else if(t->state == RUNNABLE)
-		  //     cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
-      // }
+      struct proc *t;
+      for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
+	      if(t->state == SLEEPING)
+ 		      cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
+	      else if(t->state == RUNNING)
+		      cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
+	      else if(t->state == RUNNABLE)
+		      cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
+      }
 
-      // p->myticks[d] = 0;
+      p->myticks[d] = 0;
 	    q_next[*next] = p;
 
       int j;
@@ -593,6 +588,21 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+  if(myproc()->priority==0)
+  {
+    cprintf("boosting");
+    flag0=1;
+  }
+  if(myproc()->priority==1)
+  {
+    cprintf("boosting");
+    flag1=1;
+  }
+  if(myproc()->priority==2)
+  {
+    cprintf("boosting");
+    flag2=1;
+  }
   sched();
   release(&ptable.lock);
 }
@@ -807,7 +817,7 @@ getpinfo(struct pstat* pstat)
     struct proc *proc_pstat;  
     for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
       
-      if (proc_pstat->state != UNUSED && proc_pstat->state != EMBRYO && proc_pstat->state!=SLEEPING)
+      if ((proc_pstat->state != UNUSED) && (proc_pstat->state != EMBRYO) && (proc_pstat->state!= ZOMBIE))
       {
         pstat->inuse[i] = 1;
         pstat->pid[i] = proc_pstat->pid;
@@ -821,6 +831,7 @@ getpinfo(struct pstat* pstat)
         // cprintf("%d \t\t %d \n",pstat->pid[i], pstat->priority[i]);
       // cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
       }
+      
       i++;
     }
     

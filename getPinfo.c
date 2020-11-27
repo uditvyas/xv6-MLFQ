@@ -28,7 +28,7 @@
   printf(1, "%s:%d check (" #exp ") failed: %s\n", __FILE__, __LINE__, msg); \
   exit();}
 
-int pow2[] = {80000000, 32, 16, 8};
+int pow2[] = {1, 2, 4, 80000000};
 
 int workload(int n) {
   int i, j = 0;
@@ -42,27 +42,34 @@ main(int argc, char *argv[])
 {
   struct pstat st;
 
-  sleep(10);
+  // sleep(10);
 
   int i, j, k, count = 0;
   for (i = 0; i <= 60; i++) {
-    if (fork() == 0) {
+    int x = fork();
+    if (x == 0) {
       workload(4000000 * (i + 1));
+    
       if (i == NPROC - 4) {
-        sleep(100);
+        sleep(500);
         check(getpinfo(&st) == 0, "getpinfo");
+        
+        
 
         // See what's going on...
          
         for(k = 0; k < NPROC; k++) {
           if (st.inuse[k]) {
             int m;
-            printf(1, "pid: %d\n", st.pid[k]);
-            if (st.pid[k] > 3) {
+            printf(1, "pid: %d and name is %s\n", st.pid[k],st.name[k]);
+            if (st.pid[k] > 4) {
                 printf(1,"state of pid: %d is %d\n",st.pid[k],st.state[k]);
+                
                 check(st.ticks[k][0] > 0, "Every process at the highest level should use at least 1 timer tick");
+                
+                
             }
-            for (m = 0; m < 3; m++) {
+            for (m = 0; m < 4; m++) {
                 
               printf(1, "\t level %d ticks used %d\n", m, st.ticks[k][m]);
             }
@@ -92,10 +99,17 @@ main(int argc, char *argv[])
         check(count == NPROC, "Should have 64 processes currently in used in the process table.");
         printf(1, "TEST PASSED");
       }
-    } else {
+    } 
+    else if(x>0){
+      printf(1,"this is parent my pid is %d\n",getpid());
       wait();
       break;
     }
+    else
+    {
+      printf(1,"fork failed\n");
+    }
+    
   }
 
   exit();
