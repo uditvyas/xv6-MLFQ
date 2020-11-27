@@ -29,7 +29,7 @@ struct proc *q_0[64];
 struct proc *q_1[64];
 struct proc *q_2[64];
 struct proc *q_3[64];
-struct pstat pstat_var;
+
 int flag0 = 0;
 int flag1 = 0;
 int flag2 = 0;
@@ -151,7 +151,7 @@ found:
   q_0[*p0] = p;
   // enQueue(Q_0,p);
 
-  cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t Q0 : %d !!\n",p->pid,p->state,*p0);
+  //cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t Q0 : %d !!\n",p->pid,p->state,*p0);
   return p;
 }
 
@@ -399,7 +399,7 @@ Boost(void)
   // q1=q2=q3=-1;
   *p1=*p2=*p3=-1;
 
-  // cprintf("\nBOOST DONE\n\n");
+  cprintf("\nBOOST DONE\n\n");
   release(&ptable.lock);
 }
 
@@ -461,11 +461,11 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
 
       (*next)++;
-      int d = p->priority;
+      // int d = p->priority;
       if (p->priority!=3){
         p->priority=p->priority+1;}    
       
-      cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
+      //cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
 
       // struct proc *t;
       // for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
@@ -477,7 +477,7 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
 		  //     cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
       // }
 
-      p->myticks[d] = 0;
+      // p->myticks[d] = 0;
 	    q_next[*next] = p;
 
       int j;
@@ -799,7 +799,7 @@ return 22;
 
 
 int
-getpinfo(struct pstat* pstat_xyz)
+getpinfo(struct pstat* pstat)
 { 
   
   acquire(&ptable.lock);
@@ -807,42 +807,43 @@ getpinfo(struct pstat* pstat_xyz)
     struct proc *proc_pstat;  
     for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
       
-      if (proc_pstat->state != UNUSED)
+      if (proc_pstat->state != UNUSED && proc_pstat->state != EMBRYO && proc_pstat->state!=SLEEPING)
       {
-        pstat_xyz->inuse[i] = 1;
-        pstat_xyz->pid[i] = proc_pstat->pid;
-        pstat_xyz->priority[i] = proc_pstat->priority;
-        pstat_xyz->state[i] = proc_pstat->state;
-        safestrcpy(pstat_xyz->name[i],proc_pstat->name, sizeof(proc_pstat->name));
+        pstat->inuse[i] = 1;
+        pstat->pid[i] = proc_pstat->pid;
+        pstat->priority[i] = proc_pstat->priority;
+        pstat->state[i] = proc_pstat->state;
+        safestrcpy(pstat->name[i],proc_pstat->name, sizeof(proc_pstat->name));
         int j;
         for(j = 0; j < 4; ++j){
-          pstat_xyz->ticks[i][j] = proc_pstat->myticks[j];
+          pstat->ticks[i][j] = proc_pstat->myticks[j];
         }
-        // cprintf("%d \t\t %d \n",pstat_xyz->pid[i], pstat_xyz->priority[i]);
-      // cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+        // cprintf("%d \t\t %d \n",pstat->pid[i], pstat->priority[i]);
+      // cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
       }
       i++;
     }
     
-    // cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
-    // for(int i=0;i<64;i++){
-    //     if(pstat_xyz->inuse[i] == 1){
-    //     if(pstat_xyz->state[i] == SLEEPING)
-    //         cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
-    //     else if(pstat_xyz->state[i] == RUNNING)
-    //         cprintf("\n%d \t %s \t\tRUNNING \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
-    //     else if(pstat_xyz->state[i] == RUNNABLE)
-    //         cprintf("\n%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
-    //     else if(pstat_xyz->state[i] == ZOMBIE)
-    //         cprintf("\n%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
-    //     // else if(pstat_xyz->state[i] == UNUSED)
-    //     //     cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
-    //     else if(pstat_xyz->state[i] == EMBRYO)
-    //         cprintf("\n%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat_xyz->pid[i],pstat_xyz->name[i], pstat_xyz->priority[i],pstat_xyz->ticks[i][pstat_xyz->priority[i]]);
+  //   cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
+  //   for(int i=0;i<64;i++){
+  //       if(pstat->inuse[i] == 1){
+  //         cprintf("i is %d",i);
+  //       if(pstat->state[i] == SLEEPING)
+  //           cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
+  //       else if(pstat->state[i] == RUNNING)
+  //           cprintf("\n%d \t %s \t\tRUNNING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
+  //       else if(pstat->state[i] == RUNNABLE)
+  //           cprintf("\n%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
+  //       else if(pstat->state[i] == ZOMBIE)
+  //           cprintf("\n%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
+  //       // else if(pstat->state[i] == UNUSED)
+  //       //     cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
+  //       else if(pstat->state[i] == EMBRYO)
+  //           cprintf("\n%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
 
-        // }
-    // }
-
+  //       }
+  //   }
+  // cprintf("address in %p\n",pstat);
   release(&ptable.lock);
 
   

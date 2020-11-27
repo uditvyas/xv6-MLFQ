@@ -99,7 +99,7 @@ sys_getpinfo(void)
 {
   struct pstat* pstat;
   
-  if(argptr(1, (void*)&pstat, sizeof(*pstat)) < 0)
-    return -1;
+  argptr(0, (void *)&pstat, sizeof(*pstat));
+  // cprintf("address in sysproc %p\n",pstat);
   return getpinfo(pstat);
 }
