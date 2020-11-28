@@ -103,10 +103,11 @@ allocproc(void)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == UNUSED)
     {
-      
+      /*MLFQ MODIFICATION*/
       // Allocating new peocess a priority in initial ticks as 0 in all priority levels
       p->priority = 0;
       goto found;
+      /*--------END--------*/
     }
   release(&ptable.lock);
   return 0;
@@ -137,15 +138,19 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
-  p->priority = 0;  //default
+  
+  
+  /*MLFQ MODIFICATION*/
+  // Setting the default priority of the new process as 0
+  // Setting the ticks at each priority level as 0
+  // Incrementing the process count in the highest priority queue
+  p->priority = 0;
   p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
-  // q0++;
   (*p0)++;
   q_0[*p0] = p;
-  // enQueue(Q_0,p);
-
-  //cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t Q0 : %d !!\n",p->pid,p->state,*p0);
+  
+  if (MLFQ_LOG)  cprintf("NEW PROCESS INITIALIZED PID : %d \t State : %d \t Q0 : %d !!\n",p->pid,p->state,*p0);
+  /*--------END--------*/
   return p;
 }
 
@@ -154,10 +159,6 @@ found:
 void
 userinit(void)
 {   
-  // Q_0 = createQueue();
-  // Q_1 = createQueue();
-  // Q_2 = createQueue();
-  // Q_3 = createQueue();
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
@@ -254,7 +255,11 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  
+  /*MLFQ MODIFICATION*/
+  // Ensuring that the scheduler knows about the new process
   flag0=1;
+  /*--------END--------*/
 
   release(&ptable.lock);
 
@@ -351,47 +356,29 @@ wait(void)
   }
 }
 
-/*
-BOOST
-*/
+/*MLFQ MODIFICATION*/
+
+// FUNCTION TO BOOST THE PRIORITY OF ALL PROCESSES IN THE PROCESS TABLE
 void
 Boost(void)
 { 
-  // cprintf("Boosting\n");
   sti();
   acquire(&ptable.lock);
-  //getpinfo(NULL);
   struct proc *p;
-  // QNode *node;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    // int d = p->priority;
     if (p->priority!=0){
-      //cprintf("%d\n",p->priority);
-      
       p->priority = 0;
-      // q0++;
       (*p0)++;
       q_0[*p0] = p;   
-      // enQueue(Q_0,p);
     }
     flag0 = flag1 = flag2 = 0;
     p->myticks[0] = p->myticks[1] = p->myticks[2] = p->myticks[3] = 0;
   }
 
-  for(int i=0;i<*p1;i++)
-  {
-    q_1[i] = NULL;
-  }
-  for(int i=0;i<*p2;i++)
-  {
-    q_2[i] = NULL;
-  }
-  for(int i=0;i<*p3;i++)
-  {
-    q_3[i] = NULL;
-  }
-  // Remove all process from other queues
-  // q1=q2=q3=-1;
+  for(int i=0;i<*p1;i++)    q_1[i] = NULL;
+  for(int i=0;i<*p2;i++)    q_2[i] = NULL;
+  for(int i=0;i<*p3;i++)    q_3[i] = NULL;
+  
   *p1=*p2=*p3=-1;
 
   if (MLFQ_LOG) cprintf("\nBOOST DONE\n");
