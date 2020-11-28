@@ -15,7 +15,6 @@ struct spinlock tickslock;
 uint ticks;
 uint xticks;
 uint diff = 0;
-uint boost_count=0;
 
 void
 tvinit(void)
@@ -112,41 +111,20 @@ trap(struct trapframe *tf)
   if(tf->trapno == T_IRQ0+IRQ_TIMER){
     acquire(&tickslock);
     xticks = ticks;
-    
-    //cprintf("num of ticks is %d \n",xticks);
     release(&tickslock);
-    // if(xticks/100 - diff/100 > 0)
-    if(xticks - diff >= 300)
+
+    /*MLFQ MODIFICATION*/
+    if(xticks - diff >= NBOOST)
     { 
-      //cprintf("Going in boost\n");
       diff = xticks;
-      // cprintf("%d\n", xticks);
-      boost_count++;
-      // cprintf("%d\n",boost_count);
       Boost();
     }
+    /*--------END--------*/
   }
 
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER)
      {
-      // acquire(&tickslock);
-      // xticks = ticks;
-      
-      // //cprintf("num of ticks is %d \n",xticks);
-      // release(&tickslock);
-      // // if(xticks/100 - diff/100 > 0)
-      // if(xticks - diff >= 100)
-      // { 
-      //   //cprintf("Going in boost\n");
-      //   diff = xticks;
-      //   // cprintf("%d\n", xticks);
-      //   boost_count++;
-      //   cprintf("%d\n",boost_count);
-      //   Boost();
-      // }
-      // diff = xticks;
-      //cprintf("Idhar yield hoga!\n");
       yield();
     }
 

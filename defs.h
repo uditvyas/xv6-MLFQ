@@ -12,10 +12,6 @@ struct sleeplock;
 struct stat;
 struct superblock;
 struct pstat;
-struct Queue;
-// union Header;
-// long Align;
-// struct s;
 
 // bio.c
 void            binit(void);
@@ -128,16 +124,13 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             cps(void);
+
+/*MLFQ MODIFICATION*/
 void            mlfq(struct proc**,struct proc**,int*,int*,struct cpu*, int num1, int num2);
-void            mlfqQ(struct Queue *Q_current,struct Queue *Q_next,struct cpu *c, int num1, int num2);
 void            Boost(void);
 int             getpinfo(struct pstat*);
 void            check_unused(struct proc **q_c,int *current);
-// void*           xv6_malloc(uint nbytes);
-
-// // proc.h
-// static          Header* xv6_morecore(uint nu);
-// void            xv6_free(void *ap);
+/*--------END--------*/
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -7,8 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
-
-
+/*MLFQ MODIFICATION*/
 // Defining the process queues and the corresponding maximum ticks
 int clkPerPrio[4] ={1,2,4,8};
 int q0 = -1;
@@ -27,6 +26,7 @@ struct proc *q_3[64];
 int flag0 = 0;
 int flag1 = 0;
 int flag2 = 0;
+/*--------END--------*/
 
 struct {
   struct spinlock lock;
@@ -384,8 +384,9 @@ Boost(void)
   if (MLFQ_LOG) cprintf("\nBOOST DONE\n");
   release(&ptable.lock);
 }
+/*--------END--------*/
 
-
+/*MLFQ MODIFICATION*/
 void
 check_unused(struct proc **q_c,int *current)
 {
@@ -407,6 +408,7 @@ check_unused(struct proc **q_c,int *current)
 }
 /*--------END--------*/
 
+/*MLFQ MODIFICATION*/
 void
 log_mlfq(struct proc *p, int d){
   cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
@@ -421,14 +423,12 @@ log_mlfq(struct proc *p, int d){
 	    cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
   }
 }
-
+/*--------END--------*/
 
 /*MLFQ MODIFICATION*/
-
 // GENERALISED FUNCTION FOR HANDLING ALL THE MLFQ OPERATIONS
 // INPUT: CURRENT QUEUE, NEXT QUEUE, CURRENT QUEUE INDEX, NEXT QUEUE INDEX
 // INPUT: CPU, CURRENT_QUEUE_ID, NEXT_QUEUE_ID
-
 
 void 
 mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c, int cur_q_id, int nxt_q_id)
@@ -495,6 +495,7 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     }  
   }
 }
+/*--------END--------*/
 
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
@@ -517,6 +518,7 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
    
+    /*MLFQ MODIFICATION*/
     // RESETTING THE FLAGS THAT ENSURE THAT NO PROCESS IS IN A HIGHER QUEUE
     // THAN THE CURRENT QUEUE IN THE MLFQ FUNCTION
     flag0 = flag1 = flag2 = 0;
@@ -525,6 +527,7 @@ scheduler(void)
     if(*p1!=-1)   mlfq(q_1,q_2,p1,p2,c,1,2);
     if(*p2!=-1)   mlfq(q_2,q_3,p2,p3,c,2,3);
     if(*p3!=-1)   mlfq(q_3,q_3,p3,p3,c,3,3); 
+    /*--------END--------*/
     c->proc = 0;
     
     release(&ptable.lock);
@@ -567,9 +570,9 @@ yield(void)
   myproc()->state = RUNNABLE;
   
   // START FROM THE HIGHEST PRIORITY IF A FUNCTION GIVES UP THE CPU
-  if(myproc()->priority==0)   flag0=1;
-  if(myproc()->priority==1)   flag1=1;
-  if(myproc()->priority==2)   flag2=1;
+  // if(myproc()->priority==0)   flag0=1;
+  // if(myproc()->priority==1)   flag1=1;
+  // if(myproc()->priority==2)   flag2=1;
   sched();
   release(&ptable.lock);
 }
@@ -647,39 +650,9 @@ wakeup1(void *chan)
     { 
       p->state = RUNNABLE;
 
-      if(p->priority == 0){
-        flag0 = 1;
-      }
-      else if(p->priority == 1){
-        flag1 = 1;
-      }
-      else if(p->priority == 2){
-        flag2 = 1;
-      }
-     
-
-      // else if(p->priority == 1){
-      //   // q1++;
-      //   (*p1)++;
-      //   for(int i=*p1;i>0;i--){
-      //     q_1[i] = q_1[i-1];
-      //   }
-      //   q_1[0] = p;
-      // }
-      // else if(p->priority == 2){
-      //   // (*p2)++;
-      //   for(int i=*p2;i>0;i--){
-      //     q_2[i] = q_2[i-1];
-      //   }
-      //   q_2[0] = p;
-      // }
-      // else{
-      //   (*p3)++;
-      //   for(int i=*p3;i>0;i--){
-      //     q_3[i] = q_3[i-1];
-      //   }
-      //   q_3[0] = p;
-      // }
+      if(p->priority == 0)        flag0 = 1;
+      else if(p->priority == 1)   flag1 = 1;
+      else if(p->priority == 2)   flag2 = 1;
     }
 }
 
@@ -701,7 +674,6 @@ kill(int pid)
   struct proc *p;
 
   acquire(&ptable.lock);
-  int i=0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
       p->killed = 1;
@@ -709,11 +681,9 @@ kill(int pid)
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
 
-      //pstat_xyz->inuse[i] = 0;
       release(&ptable.lock);      
       return 0;
     }
-    i++;
   }
   release(&ptable.lock);
   return -1;
@@ -756,6 +726,7 @@ procdump(void)
   }
 }
 
+// SYSTEM CALL FUNCTION: ps
 int cps()
 {
     struct proc *p;
@@ -763,67 +734,42 @@ int cps()
     acquire(&ptable.lock);
     cprintf("name \t pid \t state \t\t priority \n");
     for(p=ptable.proc;p<&ptable.proc[NPROC]; p++){
-	if(p->state == SLEEPING)
- 		cprintf("%s \t %d \t SLEEPING \t %d\n",p->name,p->pid,p->priority);
-	else if(p->state == RUNNING)
-		cprintf("%s \t %d \t RUNNING \t %d\n",p->name,p->pid,p->priority);
-	else if(p->state == RUNNABLE)
+	  if(p->state == SLEEPING)
+ 	  	cprintf("%s \t %d \t SLEEPING \t %d\n",p->name,p->pid,p->priority);
+	  else if(p->state == RUNNING)
+	  	cprintf("%s \t %d \t RUNNING \t %d\n",p->name,p->pid,p->priority);
+	  else if(p->state == RUNNABLE)
 		cprintf("%s \t %d \t RUNNABLE \t %d\n",p->name,p->pid,p->priority);
  } 
 release(&ptable.lock);
 return 22;  
 }
 
-
+/*MLFQ MODIFICATION*/
+// SYSTEM CALL FUNCTION: getpinfo
 int
 getpinfo(struct pstat* pstat)
 { 
-  
   acquire(&ptable.lock);
   int i=0;
     struct proc *proc_pstat;  
+    
+    // LOOPING OVER THE PROCESS TABLE
     for(proc_pstat = ptable.proc; proc_pstat < &ptable.proc[NPROC]; proc_pstat++){
       
-      if ((proc_pstat->state != UNUSED) && (proc_pstat->state != EMBRYO) && (proc_pstat->state!= ZOMBIE))
+      // POPULATING THE PASSED PROCESS TABLE STRUCTURE
+      if ((proc_pstat->state != UNUSED) && (proc_pstat->state != EMBRYO))// && (proc_pstat->state!= ZOMBIE))
       {
-        pstat->inuse[i] = 1;
-        pstat->pid[i] = proc_pstat->pid;
-        pstat->priority[i] = proc_pstat->priority;
-        pstat->state[i] = proc_pstat->state;
-        safestrcpy(pstat->name[i],proc_pstat->name, sizeof(proc_pstat->name));
-        int j;
-        for(j = 0; j < 4; ++j){
-          pstat->ticks[i][j] = proc_pstat->myticks[j];
-        }
-        // cprintf("%d \t\t %d \n",pstat->pid[i], pstat->priority[i]);
-      // cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
+        pstat->inuse[i] = 1;          //inuse
+        pstat->pid[i] = proc_pstat->pid;        //pid
+        pstat->priority[i] = proc_pstat->priority;      //priority
+        pstat->state[i] = proc_pstat->state;      //state
+        safestrcpy(pstat->name[i],proc_pstat->name, sizeof(proc_pstat->name));      //name
+        for(int j = 0; j < 4; ++j)  pstat->ticks[i][j] = proc_pstat->myticks[j];      //ticks
       }
-      
       i++;
     }
-    
-  //   cprintf("pid \t name \t\t state \t\t priority \t\t ticks \n");
-  //   for(int i=0;i<64;i++){
-  //       if(pstat->inuse[i] == 1){
-  //         cprintf("i is %d",i);
-  //       if(pstat->state[i] == SLEEPING)
-  //           cprintf("\n%d \t %s \t\tSLEEPING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
-  //       else if(pstat->state[i] == RUNNING)
-  //           cprintf("\n%d \t %s \t\tRUNNING \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
-  //       else if(pstat->state[i] == RUNNABLE)
-  //           cprintf("\n%d \t %s \t\tRUNNABLE \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
-  //       else if(pstat->state[i] == ZOMBIE)
-  //           cprintf("\n%d \t %s \t\tZOMBIE \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
-  //       // else if(pstat->state[i] == UNUSED)
-  //       //     cprintf("%d \t %s \t\tUNUSED \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
-  //       else if(pstat->state[i] == EMBRYO)
-  //           cprintf("\n%d \t %s \t\t EMBRYO \t\t %d \t\t %d \n",pstat->pid[i],pstat->name[i], pstat->priority[i],pstat->ticks[i][pstat->priority[i]]);
-
-  //       }
-  //   }
-  // cprintf("address in %p\n",pstat);
   release(&ptable.lock);
-
-  
   return 0;
 }
+/*--------END--------*/
