@@ -405,35 +405,38 @@ check_unused(struct proc **q_c,int *current)
     }
   }
 }
+/*--------END--------*/
 
 
-/*
-MLFQ ROUND ROBIN IMPLEMENTATION
-*/
+/*MLFQ MODIFICATION*/
+
+// GENERALISED FUNCTION FOR HANDLING ALL THE MLFQ OPERATIONS
+// INPUT: CURRENT QUEUE, NEXT QUEUE, CURRENT QUEUE INDEX, NEXT QUEUE INDEX
+// INPUT: CPU, CURRENT_QUEUE_ID, NEXT_QUEUE_ID
+
+
 void 
-mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c, int num1, int num2)
+mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct cpu *c, int cur_q_id, int nxt_q_id)
 {
-
-  // check_unused(q_current,current);
   struct proc *p;  
-  
+  // LOOPING OVER ALL PROCESSES IN THE CURRENT QUEUE
   for(int i=0;i<*current+1;i++){
+    
+    // ENSURING THAT THERE IS NO PROCESS IN THE HIGHER QUEUES
     if(flag0)  return;
-    if(flag1==1 && num1>=1)  return;
-    if(flag2==1 && num2>=2)  return;
+    if(flag1==1 && cur_q_id>=1)  return;
+    if(flag2==1 && nxt_q_id>=2)  return;
 
-  // while(i<*current+1){
+    // SELECTING A PROCESS
     p = q_current[i];
-    // rerun:
+
+    // ENSURING THAT THE PROCESS IS RUNNABLE
     if(p->state != RUNNABLE){
-      // cprintf("PState %d\n",p->state);
       continue;
     }
     check_unused(q_current,current);
     c->proc = p;
 
-    // if(num1!=p->priority)cprintf("ERROR PROCPrio: %d \t REQPrio : %d \t PROCName : %s!!\n",p->priority,num1,p->name);
-  
     switchuvm(p);
     p->state = RUNNING;
 
