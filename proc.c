@@ -407,6 +407,21 @@ check_unused(struct proc **q_c,int *current)
 }
 /*--------END--------*/
 
+void
+log_mlfq(struct proc *p, int d){
+  cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
+
+  struct proc *t;
+  for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
+	  if(t->state == SLEEPING)
+ 	    cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
+	  else if(t->state == RUNNING)
+	    cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
+	  else if(t->state == RUNNABLE)
+	    cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
+  }
+}
+
 
 /*MLFQ MODIFICATION*/
 
@@ -431,63 +446,53 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
     p = q_current[i];
 
     // ENSURING THAT THE PROCESS IS RUNNABLE
-    if(p->state != RUNNABLE){
-      continue;
-    }
+    if(p->state != RUNNABLE)    continue;
+    
+    // FUNCTION TO ENSURE THAT THE CURRENT QUEUE DOES NOT CONTAIN ANY POINTER TO
+    // AN UNUSED PROCESS SLOT IN THE PROCESS TABLE
     check_unused(q_current,current);
+    
+    // ASSIGNING THE PROCESS TO THE CPU, LOADING THE PAGES
+    // CHANGING THE STATE AND CONTEXT SWITCHING TO THE PROCESS
     c->proc = p;
-
     switchuvm(p);
     p->state = RUNNING;
-
     swtch(&(c->scheduler), p->context);
     switchkvm();
   
+    // AFTER RETURNING FROM THE PROCESS
+    // ENTER THE CONDITION IF THE PROCESS HAS COMPLETED THE ASSIGNED TICKS IN THE CURRENT QUEUE
     if(p->myticks[p->priority] == clkPerPrio[p->priority]){
 
+      // INCREMENTING THE INDEX OF THE NEXT QUEUE, AND RESETTING THE TICKS TO 0
+      // AND ADDING THE PROCESS IN THE NEXT QUEUE, IF THE PRIORITY IS NOT EQUAL TO 3
       (*next)++;
       int d = p->priority;
       if (p->priority!=3){
         p->priority=p->priority+1;}    
       
-      if (MLFQ_LOG){
-        cprintf("process %s, %d going to priority %d from priority %d after ticks %d \n ",p->name,p->pid,p->priority,d,p->myticks[d]);      
-
-        struct proc *t;
-        for(t=ptable.proc;t<&ptable.proc[NPROC]; t++){
-	        if(t->state == SLEEPING)
- 		        cprintf("%s \t %d \t SLEEPING \t %d\n",t->name,t->pid,t->priority);
-	        else if(t->state == RUNNING)
-		        cprintf("%s \t %d \t RUNNING \t %d\n", t->name,t->pid,t->priority);
-	        else if(t->state == RUNNABLE)
-		        cprintf("%s \t %d \t RUNNABLE \t %d\n", t->name,t->pid,t->priority);
-        }
-      }
+      // LOGGING THE QUEUE TRANSITION
+      if (MLFQ_LOG)   log_mlfq(p,d);
       p->myticks[d] = 0;
 	    q_next[*next] = p;
 
       int j;
+      
+      // REMOVING THE PROCESS FROM THE CURRENT QUEUE
       for(j=i;j<*current;j++){
 	      q_current[j] = q_current[j+1];
         }     
-	  
+
       i--;
       q_current[j] = NULL;
 	    (*current)--;      
       
     }
+    // RE-RUNNING THE PROCESS IF ASSIGNED TICKS ARE NOT COMPLETED
     else if(p->state == RUNNABLE)
     {
       i--;
-      //cprintf("process %s: pid :%d of priority: %d  after ticks: %d \n ",p->name,p->pid,p->priority,p->myticks[p->priority]);     
-    }
-    // else
-    // {
-    //    
-    //   goto rerun;
-    // }
-    
-    // i++;  
+    }  
   }
 }
 
@@ -512,35 +517,16 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
    
+    // RESETTING THE FLAGS THAT ENSURE THAT NO PROCESS IS IN A HIGHER QUEUE
+    // THAN THE CURRENT QUEUE IN THE MLFQ FUNCTION
     flag0 = flag1 = flag2 = 0;
-    if(*p0!=-1){
-      // cprintf("Queue : %d \t pointer : %d \t\n",q0,*p0);
-      mlfq(q_0,q_1,p0,p1,c, 0,1);
-    }
-
-    // cprintf("QUEUE 0 COMPLETED !!\n");
-    // cprintf("QUEUE 1 STARTED !!\n");
-
-    if(*p1!=-1){
-      mlfq(q_1,q_2,p1,p2,c, 1,2);
-    }
-
-    // cprintf("QUEUE 1 COMPLETED !!\n");
-    // cprintf("QUEUE 2 STARTED !!\n");
-
-    if(*p2!=-1){
-      mlfq(q_2,q_3,p2,p3,c,2,3);
-    }
-
-    // cprintf("QUEUE 2 COMPLETED !!\n");
-    // cprintf("QUEUE 3 STARTED !!\n");
-
-    if(*p3!=-1){
-      mlfq(q_3,q_3,p3,p3,c,3,3); 
-    }
+    // CALLING THE MLFQ FUNCTION FOR EACH QUEUE IN A DECREASING PRIORITY ORDER
+    if(*p0!=-1)   mlfq(q_0,q_1,p0,p1,c,0,1);
+    if(*p1!=-1)   mlfq(q_1,q_2,p1,p2,c,1,2);
+    if(*p2!=-1)   mlfq(q_2,q_3,p2,p3,c,2,3);
+    if(*p3!=-1)   mlfq(q_3,q_3,p3,p3,c,3,3); 
     c->proc = 0;
     
-    // cprintf("QUEUE 3 COMPLETED !!\n");
     release(&ptable.lock);
   }
 }
@@ -579,21 +565,11 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
-  if(myproc()->priority==0)
-  {
-    // cprintf("boosting");
-    flag0=1;
-  }
-  if(myproc()->priority==1)
-  {
-    // cprintf("boosting");
-    flag1=1;
-  }
-  if(myproc()->priority==2)
-  {
-    // cprintf("boosting");
-    flag2=1;
-  }
+  
+  // START FROM THE HIGHEST PRIORITY IF A FUNCTION GIVES UP THE CPU
+  if(myproc()->priority==0)   flag0=1;
+  if(myproc()->priority==1)   flag1=1;
+  if(myproc()->priority==2)   flag2=1;
   sched();
   release(&ptable.lock);
 }
