@@ -94,6 +94,8 @@ sys_cps(void)
 {
   return cps();
 }
+
+/*MLFQ MODIFICATION*/
 int
 sys_getpinfo(void)
 {
@@ -103,3 +105,4 @@ sys_getpinfo(void)
   // cprintf("address in sysproc %p\n",pstat);
   return getpinfo(pstat);
 }
+/*------- END -------*/

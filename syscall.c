@@ -138,7 +138,7 @@ static int (*syscalls[])(void) = {
 /*------- END -------*/
 };
 
-/*MLFQ MODIFICATION*/
+
 void
 syscall(void)
 {
@@ -154,4 +154,3 @@ syscall(void)
     curproc->tf->eax = -1;
   }
 }
-/*------- END -------*/
