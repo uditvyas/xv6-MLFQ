@@ -473,7 +473,6 @@ mlfq(struct proc **q_current,struct proc **q_next,int *current, int *next,struct
       
       // LOGGING THE QUEUE TRANSITION
       if (MLFQ_LOG)   log_mlfq(p,d);
-      p->myticks[d] = 0;
 	    q_next[*next] = p;
 
       int j;
