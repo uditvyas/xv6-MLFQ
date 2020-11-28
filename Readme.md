@@ -67,6 +67,20 @@ This system call returns basic information about each process: its process ID, h
 We have included two files to test the MLFQ scheduler.
 1. [foo.c](https://github.com/uditvyas/xv6-MLFQ/blob/master/foo.c) - This file generates a simple workload. While running this file, ensure that the logging paramter is changes from 0 to 1 in [params.h](https://github.com/uditvyas/xv6-MLFQ/blob/master/param.h#L14)
 2. [getPinfo.c](https://github.com/uditvyas/xv6-MLFQ/blob/master/getPinfo.c) - This file creates a simple workload and returns the number of ticks spent by the process in each priority level. Ensure that logging is turned to 0 in params.h.
+
+We take our entire reference from the book:
+
+```
+@Book{ArpaciDusseau18-Book,
+  author =       {Remzi H. Arpaci-Dusseau and Andrea C. Arpaci-Dusseau},
+  title =        "{Operating Systems: Three Easy Pieces}",
+  publisher =    {Arpaci-Dusseau Books},
+  month =        "August",
+  year =         {2018},
+  edition =      {1.00},
+}
+```
+http://pages.cs.wisc.edu/~remzi/OSTEP/
  
 
 
