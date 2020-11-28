@@ -26,7 +26,10 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int cps(void);
+
+/*MLFQ MODIFICATION*/
 int getpinfo(struct pstat*);
+/*------- END -------*/
 
 // ulib.c
 int stat(const char*, struct stat*);
