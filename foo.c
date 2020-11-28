@@ -39,22 +39,23 @@ main(int argc, char *argv[]){
     //     }
     // }
     int id = 0; 
-    int x = 1;
+    double x = 1;
     id = fork();
     if (id<0){
         printf(1,"%d failed in fork!\n",getpid());
         } 
     else if (id>0){
-        while(1){
-            x = x*1.000000000001;
+        while(x<1.2){
+            x = x+0.000000005;
         }
-        printf(1, "%d Creating Child %d\n",getpid(),id);
+        wait();
+        // printf(1, "%d Creating Child %d\n",getpid(),id);
             
     }
     else{
-        printf(1, "Child %d created\n", getpid());
-        while(1){
-            x = x*1.000000000001;
+        // printf(1, "Child %d created\n", getpid());
+        while(x<1.2){
+            x = x+0.000000005;
         } 
             
         }
