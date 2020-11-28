@@ -42,6 +42,8 @@ struct pstat{
 
 In this file we declare the process queues for MLFQ. In our case, we have taken 4 priorities. So the Queues declared are ```q_1, q_2, q_3, q_4```. We have pointers to queue indices as ```p0, p1, p2, p3```. 
 For each process queue, we define maximum permissible ticks as ```int clkPerPrio[4] ={1,2,4,8};```in the respective order. Where a tick is the smallest measurable time quantum of the system. In other words, a timer interrupt goes of after a duration of a tick.
+The following are the functions defined in proc.c and declared in [defs.h](
+https://github.com/uditvyas/xv6-MLFQ/blob/master/defs.h#L128)
 #### [MLFQ function](https://github.com/uditvyas/xv6-MLFQ/blob/c80326de909811f20a783b5d6ffa526146f4d85f/proc.c#L434)
 This file contains a generalised function MLFQ, which is used to implement the transition of a process from a higher priority queue to a lower priority queue.
 The function takes in the input arguments as the current queue, the next queue and the pointers to their corresponding indices. Along with this, it takes two number, ```cur_q_id, next_q_id``` which represent the priority of the current queue and the next queue. 
@@ -50,5 +52,22 @@ The ```mlfq``` function is called in the ```scheduler``` function ([here](https:
 This is a function to boost the priority of all the processes in the process table to the highest priority upon timer interrupt. 
 
 ## System Call : [int getpinfo(struct pstat*)](https://github.com/uditvyas/xv6-MLFQ/blob/master/getpinfo.c) 
+
+In order to introduce a new system, we modify the following files:
+* [sysproc.c](https://github.com/uditvyas/xv6-MLFQ/blob/master/sysproc.c#L98)
+* [syscall.h](https://github.com/uditvyas/xv6-MLFQ/blob/master/syscall.h#L24)
+* [syscall.c](https://github.com/uditvyas/xv6-MLFQ/blob/master/syscall.c#L136)
+* [Makefile](https://github.com/uditvyas/xv6-MLFQ/blob/master/Makefile)
+* [user.h](https://github.com/uditvyas/xv6-MLFQ/blob/master/user.h#L30)
+* [defs.h](https://github.com/uditvyas/xv6-MLFQ/blob/master/defs.h#L131)
+
+This system call returns basic information about each process: its process ID, how many timer ticks it has acquired at each level, which queue it is currently placed on (0, 1, 2, or 3), and its current procstate (e.g., ```SLEEPING, RUNNABLE, or RUNNING```)
+
+## Testing Methods
+We have included two files to test the MLFQ scheduler.
+1. [foo.c](https://github.com/uditvyas/xv6-MLFQ/blob/master/foo.c) - This file generates a simple workload. While running this file, ensure that the logging paramter is changes from 0 to 1 in [params.h](https://github.com/uditvyas/xv6-MLFQ/blob/master/param.h#L14)
+2. [getPinfo.c](https://github.com/uditvyas/xv6-MLFQ/blob/master/getPinfo.c) - This file creates a simple workload and returns the number of ticks spent by the process in each priority level. Ensure that logging is turned to 0 in params.h.
+ 
+
 
 
